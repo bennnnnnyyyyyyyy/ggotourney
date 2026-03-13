@@ -618,9 +618,17 @@ async function fetchSheetData(sheetName) {
   }
 }
 function processData() {
-  const { players, matches } = STATE;
+  let { players, matches } = STATE;
 
-  if (players.length > 0) {
+  // Fallback: If 'Players' tab is empty, extract players from the bridge leaderboard
+  if ((!players || players.length === 0) && STATE._bridgeLeaderboard && STATE._bridgeLeaderboard.length > 0) {
+    players = STATE._bridgeLeaderboard.map(p => ({
+      name: p.name,
+      group: p.group || '?'
+    }));
+  }
+
+  if (players && players.length > 0) {
     // Always calculate from matches (the source of truth for played/draws now)
     const lb = players.map(p => ({
       name: p.name, group: p.group,
@@ -897,7 +905,7 @@ function saveSettings() {
 }
 
 // Helper functions for legacy renderers to use STATE
-const getPlayers = () => STATE.players;
+const getPlayers = () => STATE.players.length > 0 ? STATE.players : STATE.leaderboard;
 const getMatches = () => STATE.matches;
 const getLeaderboard = () => STATE.leaderboard;
 const getQualified16 = () => STATE.qualified16;
