@@ -198,6 +198,8 @@
     font-weight: 600;
   }
   .winner-badge { font-size: 0.65rem; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+  .draw-badge { font-size: 0.65rem; color: #40c4ff; text-transform: uppercase; letter-spacing: 1px; }
+  .match-card.draw { border-left: 3px solid #40c4ff; opacity: 1; }
 
   /* ── KNOCKOUT BRACKET ── */
   .bracket-container { overflow-x: auto; }
@@ -563,72 +565,58 @@ async function fetchSheetData(sheetName) {
 function processData() {
   const { players, matches } = STATE;
 
-  if (players.length === 0) {
-    console.warn("processData: No players available to process.");
+  // If the bridge already gave us a pre-calculated leaderboard, use it directly (Bug 2 fix)
+  if (STATE._bridgeLeaderboard && STATE._bridgeLeaderboard.length > 0) {
+    STATE.leaderboard = STATE._bridgeLeaderboard;
+    console.log('processData: Using pre-calculated leaderboard from sheet (' + STATE.leaderboard.length + ' entries)');
+  } else if (players.length > 0) {
+    // Fallback: calculate from matches (only for static data)
+    const lb = players.map(p => ({
+      name: p.name, group: p.group,
+      played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0
+    }));
+    matches.forEach(m => {
+      if (m.s1 === null || m.s2 === null) return;
+      const p1 = lb.find(p => p.name === m.p1);
+      const p2 = lb.find(p => p.name === m.p2);
+      if (!p1 || !p2) return;
+      const s1 = parseInt(m.s1), s2 = parseInt(m.s2);
+      p1.played++; p2.played++;
+      p1.gf += s1; p1.ga += s2; p2.gf += s2; p2.ga += s1;
+      if (s1 > s2) { p1.w++; p2.l++; p1.pts += 3; }
+      else if (s1 < s2) { p2.w++; p1.l++; p2.pts += 3; }
+      else { p1.d++; p2.d++; p1.pts++; p2.pts++; }
+    });
+    lb.forEach(p => { p.gd = p.gf - p.ga; p.played = p.w + p.d + p.l; }); // Bug 3 fix
+    STATE.leaderboard = lb;
+    console.log('processData: Calculated leaderboard from matches (' + lb.length + ' entries)');
+  } else {
     STATE.leaderboard = [];
     STATE.goals = [];
+    console.warn('processData: No players available.');
     return;
   }
-  
-  // 1. Calculate Standings (Leaderboard)
-  const lb = players.map(p => ({
-    name: p.name,
-    group: p.group,
-    played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0
-  }));
 
-  console.log(`processData: Processing ${matches.length} matches for ${players.length} players.`);
+  // Determine Qualified (Top 2 per group) — only if bridge didn't provide it
+  if (!STATE._bridgeQualified || Object.keys(STATE._bridgeQualified).length === 0) {
+    const groups = ['A','B','C','D','E','F','G','H'];
+    const q16 = {};
+    groups.forEach(g => {
+      const sorted = STATE.leaderboard.filter(p => p.group === g)
+        .sort((a,b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+      if (sorted[0]) q16[g + '1'] = sorted[0].name;
+      if (sorted[1]) q16[g + '2'] = sorted[1].name;
+    });
+    STATE.qualified16 = q16;
+  }
 
-  matches.forEach(m => {
-    if (m.s1 === null || m.s2 === null) return;
-    const p1 = lb.find(p => p.name === m.p1);
-    const p2 = lb.find(p => p.name === m.p2);
-    if (!p1 || !p2) {
-       if (!p1 && m.p1) console.warn(`processData: Player not found in Players list: ${m.p1}`);
-       if (!p2 && m.p2) console.warn(`processData: Player not found in Players list: ${m.p2}`);
-       return;
-    }
-
-    const s1 = parseInt(m.s1);
-    const s2 = parseInt(m.s2);
-
-    p1.played++; p2.played++;
-    p1.gf += s1; p1.ga += s2;
-    p2.gf += s2; p2.ga += s1;
-
-    if (s1 > s2) { p1.w++; p2.l++; p1.pts += 3; }
-    else if (s1 < s2) { p2.w++; p1.l++; p2.pts += 3; }
-    else { p1.d++; p2.d++; p1.pts += 1; p2.pts += 1; }
-  });
-
-  lb.forEach(p => p.gd = p.gf - p.ga);
-  STATE.leaderboard = lb;
-
-  // 2. Determine Qualified (Top 2 per group)
-  const groups = ['A','B','C','D','E','F','G','H'];
-  const q16 = {};
-  groups.forEach(g => {
-    const sorted = lb.filter(p => p.group === g)
-      .sort((a,b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
-    if (sorted[0]) q16[`${g}1`] = sorted[0].name;
-    if (sorted[1]) q16[`${g}2`] = sorted[1].name;
-  });
-  STATE.qualified16 = q16;
-
-  // 3. Calculate Top Scorers
-  const scorers = {};
-  matches.forEach(m => {
-    if (m.s1 !== null && m.p1) scorers[m.p1] = (scorers[m.p1] || 0) + parseInt(m.s1);
-    if (m.s2 !== null && m.p2) scorers[m.p2] = (scorers[m.p2] || 0) + parseInt(m.s2);
-  });
-  STATE.goals = Object.entries(scorers)
-    .map(([name, goals]) => ({
-      name, goals, 
-      group: players.find(p => p.name === name)?.group || '?'
-    }))
+  // Calculate Top Scorers from leaderboard GF (more accurate than match scores for 0-0 bug)
+  STATE.goals = STATE.leaderboard
+    .filter(p => p.gf > 0)
+    .map(p => ({ name: p.name, goals: p.gf, group: p.group }))
     .sort((a,b) => b.goals - a.goals);
-  
-  console.log(`processData: Successfully calculated leaderboard (${lb.length} entries) and stats (${STATE.goals.length} scorers).`);
+
+  console.log('processData: Done. ' + STATE.leaderboard.length + ' players, ' + STATE.goals.length + ' scorers.');
 }
 
 async function fetchRelayData() {
@@ -637,63 +625,130 @@ async function fetchRelayData() {
 
   if (!scriptUrl.startsWith('http')) {
     if (scriptUrl.length > 30) {
-      scriptUrl = `https://script.google.com/macros/s/${scriptUrl}/exec`;
+      scriptUrl = 'https://script.google.com/macros/s/' + scriptUrl + '/exec';
     } else {
-      console.error("Invalid Apps Script URL or ID");
-      return null;
+      console.error('Invalid Apps Script URL'); return null;
     }
   }
 
-  const url = `${scriptUrl}?id=${CONFIG.spreadsheetId}`;
+  const url = scriptUrl + '?id=' + CONFIG.spreadsheetId;
   try {
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`Network error (${response.status})`);
+    if (!response.ok) throw new Error('Network error (' + response.status + ')');
     const data = await response.json();
     if (data.error) throw new Error(data.error);
 
-    // Normalize keys (Map sheet headers to internal keys)
+    console.log('Bridge returned tabs:', data.tabs_found);
+
+    // ── Normalize Players ──
     if (data.players) {
       data.players = data.players.map(p => ({
-        name: p.name || p.Name || p.Player || p.PLAYER || '',
-        group: p.group || p.Group || p.GROUP || 'A'
+        name: p['Player Name'] || p.name || p.Name || p.Player || '',
+        group: p.Group || p.group || 'A'
       })).filter(p => p.name);
     }
+
+    // ── Normalize Matches ──
+    // Bug 1 fix: use leaderboard played count to detect unplayed 0-0
     if (data.matches) {
-      data.matches = data.matches.map(m => ({
-        day: m.day || m.Day || m.DAY || 'TBD',
-        time: m.time || m.Time || m.TIME || '00:00',
-        p1: m.p1 || m['Player 1'] || m['PLAYER 1'] || m.Player1 || '',
-        p2: m.p2 || m['Player 2'] || m['PLAYER 2'] || m.Player2 || '',
-        s1: m.s1 !== undefined ? m.s1 : m['Score 1'] !== undefined ? m['Score 1'] : m.Score1,
-        s2: m.s2 !== undefined ? m.s2 : m['Score 2'] !== undefined ? m['Score 2'] : m.Score2
-      })).map(m => {
-        const s1 = (m.s1 === '' || m.s1 === null || m.s1 === undefined) ? null : parseInt(m.s1);
-        const s2 = (m.s2 === '' || m.s2 === null || m.s2 === undefined) ? null : parseInt(m.s2);
-        return { ...m, s1, s2 };
+      // Build a lookup of how many games each player has actually played
+      const lbData = data.group_ranking__leaderboard_ || [];
+      const playedMap = {};
+      lbData.forEach(row => {
+        const name = row.Player || row.name || '';
+        const played = parseInt(row.Played || row.played || 0);
+        if (name) playedMap[name] = played;
       });
+
+      // Build a counter of how many matches in the sheet each player appears in with scores
+      const matchCountMap = {};
+
+      data.matches = data.matches.map(m => {
+        const day = m.Date || m.day || m.Day || 'TBD';
+        const time = m.Time || m.time || '00:00';
+        const p1 = m['Player 1'] || m.p1 || '';
+        const p2 = m['Player 2'] || m.p2 || '';
+        const rawS1 = m['Score 1'] !== undefined ? m['Score 1'] : m.s1;
+        const rawS2 = m['Score 2'] !== undefined ? m['Score 2'] : m.s2;
+
+        let s1 = (rawS1 === '' || rawS1 === null || rawS1 === undefined) ? null : parseInt(rawS1);
+        let s2 = (rawS2 === '' || rawS2 === null || rawS2 === undefined) ? null : parseInt(rawS2);
+
+        return { day, time, p1, p2, s1, s2 };
+      }).filter(m => m.p1 && m.p2);
+
+      // Bug 1 fix: detect which 0-0 matches are real vs unplayed
+      // Count scored matches per player in order
+      if (Object.keys(playedMap).length > 0) {
+        const counterMap = {};
+        data.matches.forEach(m => {
+          if (m.s1 === null) return; // already null = definitely unplayed
+          const p1Name = m.p1, p2Name = m.p2;
+          counterMap[p1Name] = (counterMap[p1Name] || 0) + 1;
+          counterMap[p2Name] = (counterMap[p2Name] || 0) + 1;
+
+          // If this match would push either player over their real played count, mark as unplayed
+          const p1Limit = playedMap[p1Name] || 0;
+          const p2Limit = playedMap[p2Name] || 0;
+          if (counterMap[p1Name] > p1Limit || counterMap[p2Name] > p2Limit) {
+            m.s1 = null;
+            m.s2 = null;
+            counterMap[p1Name] = (counterMap[p1Name] || 1) - 1;
+            counterMap[p2Name] = (counterMap[p2Name] || 1) - 1;
+          }
+        });
+        console.log('Applied played-count filter using leaderboard data');
+      }
     }
-    // Corrected keys for tabs from bridge.js
-    const scheduleRaw = data.schedule || data.SCHEDULE || [];
-    if (scheduleRaw.length > 0) {
-      data.schedule = scheduleRaw.map(s => ({
-        day: s.day || s.Day || s.DAY || 'TBD',
-        time: s.time || s.Time || s.TIME || '00:00',
-        label: s.label || s.Match || s.MATCH || s.Label || ''
-      }));
+
+    // ── Normalize Leaderboard (Bug 2 fix) ──
+    const lbRaw = data.group_ranking__leaderboard_ || [];
+    if (lbRaw.length > 0) {
+      data.leaderboard_data = lbRaw.map(row => ({
+        name:   row.Player || row.name || '',
+        group:  row.Group || row.group || '?',
+        played: parseInt(row.Played || row.played || 0),
+        w:      parseInt(row.W || row.Wins || 0),
+        d:      parseInt(row.D || row.Draw || 0),
+        l:      parseInt(row.L || row.Loss || 0),
+        gf:     parseInt(row.GF || row['Goals For'] || 0),
+        ga:     parseInt(row.GA || row['Goals Against'] || 0),
+        gd:     parseInt(row.GD || row['Goal Diff'] || 0),
+        pts:    parseInt(row.Pts || row.Points || 0)
+      })).filter(p => p.name);
     }
+
+    // ── Normalize Qualified 16 ──
     if (data.qualified_16) {
       const q = {};
       data.qualified_16.forEach(row => {
-        const pos = row.position || row.Position || row.POS || '';
-        const name = row.name || row.Name || row.Player || '';
-        if (pos) q[pos] = name;
+        const pos = row.Group || ''; // e.g. 'A1', 'A2'
+        const name = row.Player || '';
+        if (pos && name) q[pos] = name;
       });
       data.qualified16_data = q;
     }
 
+    // ── Normalize Stats (top scorers from sheet) ──
+    if (data.stats) {
+      data.stats_data = data.stats.map(row => ({
+        name: row.Player || row.name || '',
+        goals: parseInt(row.Goals || row.goals || 0)
+      })).filter(p => p.name && p.goals > 0);
+    }
+
+    // ── Normalize Schedule ──
+    if (data.schedule) {
+      data.schedule = data.schedule.map(s => ({
+        day:   s.day || s.Day || 'TBD',
+        time:  s.Time || s.time || '00:00',
+        label: s.Match || s.Label || s.label || ''
+      })).filter(s => s.label);
+    }
+
     return data;
   } catch (e) {
-    console.error(`Relay Fetch Error:`, e.message);
+    console.error('Relay Fetch Error:', e.message);
     return { error: e.message };
   }
 }
@@ -717,18 +772,35 @@ async function requestSync() {
     if (sheetPlayers && sheetMatches) data = { players: sheetPlayers, matches: sheetMatches };
   }
 
-  if (data && !data.error && (data.players || data.players_raw)) {
-    console.log("Sync Success. Data received:", Object.keys(data));
+  if (data && !data.error && (data.players || data.leaderboard_data)) {
+    console.log('Sync OK. Keys:', Object.keys(data));
     STATE.players = data.players || [];
     STATE.matches = data.matches || [];
-    
-    // Explicitly check for schedule from the bridge (bridge.js uses underscores)
     STATE.schedule = data.schedule || [];
-    
+
+    // Bug 2 fix: store pre-calculated leaderboard for processData to use
+    STATE._bridgeLeaderboard = data.leaderboard_data || [];
+    STATE._bridgeQualified = data.qualified16_data || {};
     if (data.qualified16_data) STATE.qualified16 = data.qualified16_data;
-    
+
+    // Use sheet's stats as top scorers if available
+    if (data.stats_data && data.stats_data.length > 0) {
+      // We'll enrich with group info after processData runs
+      STATE._bridgeStats = data.stats_data;
+    }
+
     STATE.lastSync = new Date();
     processData();
+
+    // Enrich stats with group info from leaderboard
+    if (STATE._bridgeStats && STATE._bridgeStats.length > 0) {
+      STATE.goals = STATE._bridgeStats.map(s => ({
+        name: s.name,
+        goals: s.goals,
+        group: STATE.leaderboard.find(p => p.name === s.name)?.group || '?'
+      }));
+    }
+
     updateUI();
     
     dot.classList.remove('loading');
@@ -916,23 +988,25 @@ function renderMatches() {
 
     matches.forEach(m => {
       const played = m.s1 !== null;
+      const isDraw = played && m.s1 === m.s2; // Bug 4 fix
       const winner = played ? (m.s1 > m.s2 ? m.p1 : m.s1 < m.s2 ? m.p2 : null) : null;
       const p1g = getPlayers().find(p => p.name === m.p1)?.group || 'A';
       const p2g = getPlayers().find(p => p.name === m.p2)?.group || 'A';
 
       const card = document.createElement('div');
-      card.className = `match-card ${played ? 'played' : 'pending'}`;
+      card.className = `match-card ${played ? (isDraw ? 'draw' : 'played') : 'pending'}`;
       card.innerHTML = `
         <div class="player-side">
           <div class="player-avatar" style="${avatarStyle(p1g)}">${initials(m.p1 || 'TBD')}</div>
           <div>
             <div class="player-name">${m.p1 || 'TBD'}</div>
             ${winner === m.p1 && m.p1 ? '<div class="winner-badge">⭐ Winner</div>' : ''}
+            ${isDraw ? '<div class="draw-badge">🤝 Draw</div>' : ''}
           </div>
         </div>
         <div class="match-score">
           ${played
-            ? `<div class="score-display">${m.s1} – ${m.s2}</div>`
+            ? `<div class="score-display" ${isDraw ? 'style="color: var(--blue, #40c4ff);"' : ''}>${m.s1} – ${m.s2}</div>`
             : `<div class="score-pending">VS</div>`}
           <div class="match-time">${m.time}</div>
         </div>
@@ -940,6 +1014,7 @@ function renderMatches() {
           <div>
             <div class="player-name">${m.p2 || 'TBD'}</div>
             ${winner === m.p2 && m.p2 ? '<div class="winner-badge">⭐ Winner</div>' : ''}
+            ${isDraw ? '<div class="draw-badge">🤝 Draw</div>' : ''}
           </div>
           <div class="player-avatar" style="${avatarStyle(p2g)}">${initials(m.p2 || 'TBD')}</div>
         </div>
@@ -1010,12 +1085,14 @@ function renderKnockout() {
 function renderStats() {
   const container = document.getElementById('stats-grid');
   const allGoals = getGoals();
-  if (!allGoals || allGoals.length === 0) {
+  const currentLeaderboard = getLeaderboard();
+
+  // Bug 5 fix: only bail if BOTH are empty
+  if ((!allGoals || allGoals.length === 0) && (!currentLeaderboard || currentLeaderboard.length === 0)) {
     container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No stats available yet</div>';
     return;
   }
-  const maxGoals = allGoals[0].goals;
-  const currentLeaderboard = getLeaderboard();
+  const maxGoals = allGoals.length > 0 ? allGoals[0].goals : 1;
 
   // Top scorers
   const scorersHTML = allGoals.slice(0, 12).map((p,i) => `
