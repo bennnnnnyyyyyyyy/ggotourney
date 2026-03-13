@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GGO FC 26 Tournament</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  @font-face {
+    font-family: 'TTFirsNeue';
+    src: url('fonts/TTFirsNeue-DemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #00D15E;
+    --green-dim: #00b359;
+    --dark: #010101;
+    --card: #111111;
+    --card2: #161e16;
+    --border: #1e2e1e;
+    --text: #e8f5e8;
+    --muted: #6b8f6b;
+    --gold: #ffd600;
+    --silver: #b0bec5;
+    --bronze: #ff8a65;
+    --red: #ff4444;
+    --draw: #66b3ff;
+    --accent-blue: #004BC8;
+  }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'TTFirsNeue', 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #010101 0%, #0a1a0a 50%, #010101 100%);
+    border-bottom: 2px solid var(--green);
+    padding: 16px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 20px;
+  }
+  .logo img {
+    max-height: 50px;
+    width: auto;
+    filter: drop-shadow(0 0 10px rgba(0, 209, 94, 0.3));
+  }
+  .logo-text { line-height: 1.1; }
+  .logo-text h1 { font-family: 'TTFirsNeue', sans-serif; font-size: 2.2rem; color: var(--green); letter-spacing: 1px; font-weight: 600; }
+  .logo-text p { font-size: 0.75rem; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; font-family: 'DM Sans', sans-serif; }
+
+  /* ── NAV ── */
+  nav { display: flex; gap: 8px; }
+  .nav-btn {
+    padding: 10px 24px; border-radius: 8px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); font-family: 'TTFirsNeue', sans-serif;
+    font-size: 0.85rem; font-weight: 600; letter-spacing: 1px;
+    cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+  }
+  .nav-btn:hover { border-color: var(--green); color: var(--green); background: rgba(0, 209, 94, 0.05); }
+  .nav-btn.active { background: var(--green); color: #000; border-color: var(--green); box-shadow: 0 0 15px rgba(0, 209, 94, 0.4); font-weight: 700; }
+
+  /* ── MAIN ── */
+  main { padding: 32px; max-width: 1400px; margin: 0 auto; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: 'TTFirsNeue', sans-serif;
+    font-size: 1.8rem; letter-spacing: 2px;
+    color: var(--green); margin-bottom: 24px;
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 600;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--green), transparent);
+  }
+
+  /* ── GROUPS GRID ── */
+  .groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .group-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .group-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,230,118,0.12);
+  }
+  .group-header {
+    background: linear-gradient(90deg, var(--green-dim), #003d1a);
+    padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .group-label {
+    font-family: 'TTFirsNeue', sans-serif;
+    font-size: 1.4rem; color: #000; letter-spacing: 1px;
+    font-weight: 600;
+  }
+  .group-badge { font-size: 0.65rem; color: rgba(0,0,0,0.7); letter-spacing: 2px; text-transform: uppercase; }
+  .group-table { width: 100%; border-collapse: collapse; }
+  .group-table thead th {
+    padding: 8px 12px; font-size: 0.65rem; color: var(--muted);
+    text-align: right; text-transform: uppercase; letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-table thead th:first-child { text-align: left; }
+  .group-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.15s; }
+  .group-table tbody tr:hover { background: rgba(0,230,118,0.04); }
+  .group-table tbody tr:last-child { border-bottom: none; }
+  .group-table td {
+    padding: 10px 12px; font-size: 0.85rem;
+    text-align: right;
+  }
+  .group-table td:first-child { text-align: left; font-weight: 500; }
+  .rank { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; margin-right: 6px; }
+  .rank-1 { background: var(--gold); color: #000; }
+  .rank-2 { background: var(--silver); color: #000; }
+  .rank-3 { background: var(--bronze); color: #000; }
+  .rank-4 { background: var(--border); color: var(--muted); }
+  .qualified { border-left: 3px solid var(--green); }
+  .pts-cell { color: var(--green); font-weight: 700; }
+  .gd-pos { color: var(--green); }
+  .gd-neg { color: var(--red); }
+
+  /* ── MATCHES ── */
+  .matches-filter {
+    display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 6px 16px; border-radius: 20px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .filter-btn:hover { border-color: var(--green); color: var(--green); }
+  .filter-btn.active { background: rgba(0,230,118,0.15); border-color: var(--green); color: var(--green); }
+
+  .matches-list { display: flex; flex-direction: column; gap: 10px; }
+  .match-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 20px;
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center; gap: 16px;
+    transition: all 0.2s;
+  }
+  .match-card:hover { border-color: var(--green); background: var(--card2); }
+  .match-card.played { border-left: 3px solid var(--green); }
+  .match-card.pending { border-left: 3px solid var(--border); opacity: 0.75; }
+  .player-side { display: flex; align-items: center; gap: 10px; }
+  .player-side.right { flex-direction: row-reverse; }
+  .player-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+  }
+  .player-name { font-weight: 500; font-size: 0.9rem; }
+  .player-side.right .player-name { text-align: right; }
+  .match-score {
+    text-align: center; min-width: 80px;
+  }
+  .score-display {
+    font-family: 'TTFirsNeue', sans-serif; font-size: 2rem;
+    color: var(--green); letter-spacing: 2px; line-height: 1;
+    font-weight: 600;
+  }
+  .score-pending {
+    font-family: 'TTFirsNeue', sans-serif; font-size: 1.4rem;
+    color: var(--muted); letter-spacing: 1px;
+    font-weight: 600;
+  }
+  .match-time { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .match-day-header {
+    font-family: 'TTFirsNeue', sans-serif;
+    font-size: 1.1rem; letter-spacing: 2px; color: var(--muted);
+    padding: 16px 0 8px; text-transform: uppercase;
+    font-weight: 600;
+  }
+  .winner-badge { font-size: 0.65rem; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* ── KNOCKOUT BRACKET ── */
+  .bracket-container { overflow-x: auto; }
+  .bracket {
+    display: flex; gap: 40px; align-items: flex-start;
+    min-width: 900px; padding: 20px 0;
+  }
+  .bracket-round { display: flex; flex-direction: column; gap: 0; min-width: 200px; }
+  .round-title {
+    font-family: 'TTFirsNeue', sans-serif; font-size: 0.9rem;
+    color: var(--muted); letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 20px; text-align: center; padding: 8px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  .bracket-slots { display: flex; flex-direction: column; }
+  .bracket-match {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden; margin-bottom: 8px;
+    transition: all 0.2s;
+  }
+  .bracket-match:hover { border-color: var(--green-dim); }
+  .bracket-player {
+    padding: 10px 14px; display: flex; justify-content: space-between;
+    align-items: center; font-size: 0.82rem; font-weight: 500;
+    transition: background 0.15s;
+  }
+  .bracket-player:not(:last-child) { border-bottom: 1px solid var(--border); }
+  .bracket-player.winner { background: rgba(0,230,118,0.1); color: var(--green); }
+  .bracket-player.loser { opacity: 0.4; }
+  .bracket-player-score { font-family: 'TTFirsNeue', sans-serif; font-size: 1.1rem; color: var(--green); font-weight: 600; }
+  .bracket-match-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 2px; text-align: center; padding: 4px; background: rgba(0,0,0,0.2); text-transform: uppercase; }
+  .bracket-spacer { height: 16px; }
+
+  /* ── STATS ── */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .stat-card-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    font-family: 'TTFirsNeue', sans-serif; font-size: 1.1rem;
+    letter-spacing: 1px; color: var(--green);
+    font-weight: 600;
+  }
+  .stat-row {
+    display: flex; align-items: center; padding: 12px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.03); gap: 14px;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-rank { font-family: 'TTFirsNeue', sans-serif; font-size: 1.3rem; color: var(--muted); width: 28px; font-weight: 600; }
+  .stat-name { flex: 1; font-weight: 500; font-size: 0.9rem; }
+  .stat-group { font-size: 0.65rem; color: var(--muted); background: var(--border); border-radius: 4px; padding: 2px 6px; }
+  .stat-bar-wrap { flex: 2; }
+  .stat-bar {
+    height: 6px; border-radius: 3px;
+    background: linear-gradient(90deg, var(--green), var(--green-dim));
+    transition: width 1s ease;
+  }
+  .stat-value { font-family: 'TTFirsNeue', sans-serif; font-size: 1.4rem; color: var(--green); min-width: 36px; text-align: right; font-weight: 600; }
+
+  /* ── CHAMPION BANNER ── */
+  .champion-section {
+    text-align: center; padding: 60px 20px;
+    background: radial-gradient(ellipse at center, rgba(255,214,0,0.08) 0%, transparent 70%);
+    border: 1px solid rgba(255,214,0,0.15); border-radius: 16px;
+    margin-bottom: 32px;
+  }
+  .champion-trophy { font-size: 5rem; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+  .champion-title { font-family:'TTFirsNeue',sans-serif; font-size:1rem; letter-spacing:5px; color:var(--muted); margin:12px 0 6px; font-weight: 600; }
+  .champion-name { font-family:'TTFirsNeue',sans-serif; font-size:3.5rem; color:var(--gold); letter-spacing:2px; font-weight: 600; }
+  .champion-subtitle { font-size:0.75rem; color:var(--muted); letter-spacing:2px; text-transform:uppercase; font-family: 'DM Sans', sans-serif; }
+
+  /* Schedule */
+  .schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .sched-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .sched-day {
+    background: linear-gradient(90deg, #1a2a1a, #0f1f0f);
+    padding: 10px 16px; font-family: 'TTFirsNeue', sans-serif;
+    font-size: 1rem; letter-spacing: 1px; color: var(--green);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  .sched-match { padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; }
+  .sched-match:last-child { border-bottom: none; }
+  .sched-time { font-size: 0.75rem; color: var(--muted); }
+  .sched-label { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+
+  /* ── SYNC UI ── */
+  .sync-container { display: flex; align-items: center; gap: 16px; }
+  .sync-status { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); position: relative; }
+  .status-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .status-dot.loading { background: var(--gold); animation: pulse 1s infinite; }
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+  .sync-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.75rem; border-color: var(--border); }
+  .sync-btn svg { transition: transform 0.5s; }
+  .sync-btn.loading svg { animation: rotate 1s linear infinite; }
+  @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .settings-btn { padding: 6px; border-color: var(--border); display: flex; align-items: center; justify-content: center; }
+  .settings-btn svg { width: 16px; height: 16px; color: var(--muted); }
+  .settings-btn:hover svg { color: var(--green); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+    display: none; align-items: center; justify-content: center; z-index: 200;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--card); border: 2px solid var(--green); border-radius: 12px;
+    width: 90%; max-width: 500px; padding: 32px; box-shadow: 0 0 30px rgba(0,209,94,0.2);
+  }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-header h2 { font-family: 'TTFirsNeue', sans-serif; color: var(--green); font-size: 1.5rem; }
+  .close-modal { cursor: pointer; color: var(--muted); }
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+  .form-group input {
+    width: 100%; background: var(--dark); border: 1px solid var(--border);
+    padding: 12px; border-radius: 6px; color: var(--text); font-family: 'DM Sans', sans-serif;
+  }
+  .form-group input:focus { border-color: var(--green); outline: none; }
+  .save-settings { width: 100%; padding: 12px; background: var(--green); color: #000; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+  .save-settings:hover { box-shadow: 0 0 15px rgba(0,209,94,0.4); }
+
+  /* Responsive */
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    header { flex-direction: column; gap: 16px; padding: 16px; }
+    main { padding: 16px; }
+    .stats-grid { grid-template-columns: 1fr; }
+    nav { flex-wrap: wrap; justify-content: center; }
+  }
+
+  /* Glow pulse on qualified */
+  @keyframes glowPulse {
+    0%,100% { box-shadow: none; }
+    50% { box-shadow: inset 0 0 8px rgba(0,230,118,0.15); }
+  }
+  .qualified { animation: glowPulse 3s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <img src="images/GGO-White-Var3.png" alt="GGO Logo">
+    <div class="logo-text">
+      <h1>GGO FC 26</h1>
+      <p>Tournament Dashboard</p>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-btn active" onclick="showView('standings', this)">Standings</button>
+    <button class="nav-btn" onclick="showView('matches', this)">Matches</button>
+    <button class="nav-btn" onclick="showView('knockout', this)">Knockout</button>
+    <button class="nav-btn" onclick="showView('stats', this)">Stats</button>
+    <button class="nav-btn" onclick="showView('schedule', this)">Schedule</button>
+  </nav>
+
+  <div class="sync-container">
+    <div id="sync-status" class="sync-status">
+      <span class="status-dot"></span>
+      <span id="last-sync-time">Static Mode</span>
+    </div>
+    <button class="nav-btn sync-btn" onclick="requestSync()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+      Sync
+    </button>
+    <button class="nav-btn settings-btn" onclick="toggleSettings(true)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </button>
+  </div>
+</header>
+
+<div id="settings-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Sync Settings</h2>
+      <span class="close-modal" onclick="toggleSettings(false)">✕</span>
+    </div>
+    <div class="form-group">
+      <label>Spreadsheet ID (from URL)</label>
+      <input type="text" id="setting-sheet-id" placeholder="1vW...">
+    </div>
+    <div class="form-group">
+      <label>Apps Script Web App URL</label>
+      <input type="text" id="setting-script-url" placeholder="https://script.google.com/macros/s/...">
+    </div>
+    <button class="save-settings" onclick="saveSettings()">Save & Sync Now</button>
+  </div>
+</div>
+
+<main>
+
+<!-- STANDINGS -->
+<div id="view-standings" class="view active">
+  <div class="section-title">Group Standings</div>
+  <div class="groups-grid" id="groups-grid"></div>
+</div>
+
+<!-- MATCHES -->
+<div id="view-matches" class="view">
+  <div class="section-title">Match Results</div>
+  <div class="matches-filter">
+    <button class="filter-btn active" onclick="filterMatches('all', this)">All</button>
+    <button class="filter-btn" onclick="filterMatches('played', this)">Played</button>
+    <button class="filter-btn" onclick="filterMatches('pending', this)">Upcoming</button>
+    <button class="filter-btn" onclick="filterMatches('Today', this)">Today</button>
+    <button class="filter-btn" onclick="filterMatches('Tomorrow', this)">Tomorrow</button>
+  </div>
+  <div class="matches-list" id="matches-list"></div>
+</div>
+
+<!-- KNOCKOUT -->
+<div id="view-knockout" class="view">
+  <div class="section-title">Knockout Stage</div>
+  <div class="champion-section">
+    <div class="champion-trophy">🏆</div>
+    <div class="champion-title">Tournament Champion</div>
+    <div class="champion-name">TBD</div>
+    <div class="champion-subtitle">FC 26 Tournament · 2026</div>
+  </div>
+  <div class="bracket-container">
+    <div class="bracket" id="bracket"></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="view-stats" class="view">
+  <div class="section-title">Player Stats</div>
+  <div class="stats-grid" id="stats-grid"></div>
+</div>
+
+<!-- SCHEDULE -->
+<div id="view-schedule" class="view">
+  <div class="section-title">Knockout Schedule</div>
+  <div class="schedule-grid" id="schedule-grid"></div>
+</div>
+
+</main>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────
+// ── DYNAMIC CONFIG ──────────────────────────────────────────────────────
+const CONFIG = {
+  spreadsheetId: localStorage.getItem('ggo_sheet_id') || '1zcEKdIhD1MTq_-FsNTge8UwNTn5NsE2mnPFtw54bXc0',
+  appsScriptUrl: localStorage.getItem('ggo_script_url') || 'https://script.google.com/macros/s/AKfycbw2qfgs79eKIn46H6dHZkqkhQVJbZraEjuBJ5KO18tSQnFzctVMvd7A5b_00jz5KdZIgQ/exec',
+  refreshInterval: 300000, // 5 minutes
+  fallbackToStatic: true
+};
+
+const STATE = {
+  players: [],
+  matches: [],
+  schedule: [],
+  standings: [],
+  leaderboard: [],
+  qualified16: {},
+  goals: [],
+  lastSync: null
+};
+
+// Static Fallback Data (Current data as of injection)
+const STATIC_PLAYERS = [
+  {name:'Ahmed Farghaly',group:'A'},{name:'Blake Hunter',group:'A'},
+  {name:'Jason Foster',group:'A'},{name:'Jimmy',group:'A'},
+  {name:'Russ',group:'B'},{name:'Ben Camel',group:'B'},
+  {name:'Chris',group:'B'},{name:'David Green',group:'B'},
+  {name:'Luke Grant',group:'C'},{name:'COBY JONES',group:'C'},
+  {name:'Norman Clarke',group:'C'},{name:'Jaime William',group:'C'},
+  {name:'Peter Smith',group:'D'},{name:'Mike',group:'D'},
+  {name:'JEREMY WELSON',group:'D'},{name:'Ray Parker',group:'D'},
+  {name:'Kevin Jones',group:'E'},{name:'James Miller',group:'E'},
+  {name:'Thomas',group:'E'},{name:'Alex Woods',group:'E'},
+  {name:'Joey Milner',group:'F'},{name:'William White',group:'F'},
+  {name:'JOSH ADAMS',group:'F'},{name:'Brodie Armin',group:'F'},
+  {name:'OSCAR KAMEL',group:'G'},{name:'Mason Adams',group:'G'},
+  {name:'Stewart Martin',group:'G'},{name:'Jay Doe',group:'G'},
+  {name:'Scottt Weasley',group:'H'},{name:'Christopher Smith',group:'H'},
+  {name:'Ben',group:'H'},{name:'Tim Miller',group:'H'}
+];
+
+const STATIC_MATCHES = [
+  {day:'Today',time:'18:48',p1:'Ahmed Farghaly',s1:9,s2:3,p2:'Jimmy'},
+  {day:'Today',time:'19:00',p1:'Blake Hunter',s1:3,s2:8,p2:'Jason Foster'},
+  {day:'Today',time:'19:36',p1:'Russ',s1:1,s2:2,p2:'Chris'},
+  {day:'Today',time:'19:24',p1:'Chris',s1:3,s2:1,p2:'David Green'},
+  {day:'Today',time:'16:24',p1:'COBY JONES',s1:1,s2:13,p2:'Norman Clarke'},
+  {day:'Today',time:'20:36',p1:'Norman Clarke',s1:6,s2:3,p2:'Jaime William'},
+  {day:'Today',time:'17:00',p1:'Peter Smith',s1:4,s2:4,p2:'JEREMY WELSON'},
+  {day:'Today',time:'17:12',p1:'Mike',s1:null,s2:null,p2:'Ray Parker'},
+  {day:'Today',time:'18:00',p1:'Ahmed Farghaly',s1:null,s2:null,p2:'Blake Hunter'},
+  {day:'Today',time:'18:12',p1:'Jason Foster',s1:null,s2:null,p2:'Jimmy'},
+  {day:'Today',time:'18:24',p1:'Ahmed Farghaly',s1:null,s2:null,p2:'Jason Foster'},
+  {day:'Today',time:'18:36',p1:'Blake Hunter',s1:null,s2:null,p2:'Jimmy'},
+  {day:'Today',time:'19:12',p1:'Russ',s1:null,s2:null,p2:'Ben Camel'},
+  {day:'Today',time:'19:48',p1:'Ben Camel',s1:null,s2:null,p2:'David Green'},
+  {day:'Today',time:'20:00',p1:'Russ',s1:null,s2:null,p2:'David Green'},
+  {day:'Today',time:'20:12',p1:'Ben Camel',s1:null,s2:null,p2:'Chris'},
+  {day:'Today',time:'20:24',p1:'Luke Grant',s1:null,s2:null,p2:'COBY JONES'},
+  {day:'Today',time:'20:48',p1:'Luke Grant',s1:null,s2:null,p2:'Norman Clarke'},
+  {day:'Tomorrow',time:'16:00',p1:'COBY JONES',s1:null,s2:null,p2:'Jaime William'},
+  {day:'Tomorrow',time:'16:12',p1:'Luke Grant',s1:null,s2:null,p2:'Jaime William'},
+  {day:'Tomorrow',time:'16:36',p1:'Peter Smith',s1:null,s2:null,p2:'Mike'},
+  {day:'Tomorrow',time:'16:48',p1:'JEREMY WELSON',s1:null,s2:null,p2:'Ray Parker'},
+  {day:'Tomorrow',time:'17:24',p1:'Peter Smith',s1:null,s2:null,p2:'Ray Parker'},
+  {day:'Tomorrow',time:'17:36',p1:'Mike',s1:null,s2:null,p2:'JEREMY WELSON'},
+  {day:'Tomorrow',time:'17:48',p1:'Kevin Jones',s1:null,s2:null,p2:'James Miller'},
+  {day:'Tomorrow',time:'18:00',p1:'Thomas',s1:null,s2:null,p2:'Alex Woods'},
+  {day:'Tomorrow',time:'18:12',p1:'Kevin Jones',s1:null,s2:null,p2:'Thomas'},
+  {day:'Tomorrow',time:'18:24',p1:'James Miller',s1:null,s2:null,p2:'Alex Woods'},
+  {day:'Tomorrow',time:'18:36',p1:'Kevin Jones',s1:null,s2:null,p2:'Alex Woods'},
+  {day:'Tomorrow',time:'18:48',p1:'James Miller',s1:null,s2:null,p2:'Thomas'},
+  {day:'Tomorrow',time:'19:00',p1:'Joey Milner',s1:null,s2:null,p2:'William White'},
+  {day:'Tomorrow',time:'19:12',p1:'JOSH ADAMS',s1:null,s2:null,p2:'Brodie Armin'},
+  {day:'Tomorrow',time:'19:24',p1:'Joey Milner',s1:null,s2:null,p2:'JOSH ADAMS'},
+  {day:'Tomorrow',time:'19:36',p1:'William White',s1:null,s2:null,p2:'Brodie Armin'},
+  {day:'Tomorrow',time:'19:48',p1:'Joey Milner',s1:null,s2:null,p2:'Brodie Armin'},
+  {day:'Tomorrow',time:'20:00',p1:'William White',s1:null,s2:null,p2:'JOSH ADAMS'},
+  {day:'Tomorrow',time:'20:12',p1:'OSCAR KAMEL',s1:null,s2:null,p2:'Mason Adams'},
+  {day:'Tomorrow',time:'20:24',p1:'Stewart Martin',s1:null,s2:null,p2:'Jay Doe'},
+  {day:'Tomorrow',time:'20:36',p1:'OSCAR KAMEL',s1:null,s2:null,p2:'Stewart Martin'},
+  {day:'Tomorrow',time:'20:48',p1:'Mason Adams',s1:null,s2:null,p2:'Jay Doe'},
+  {day:'Tomorrow',time:'21:00',p1:'OSCAR KAMEL',s1:null,s2:null,p2:'Jay Doe'},
+  {day:'Tomorrow',time:'21:12',p1:'Mason Adams',s1:null,s2:null,p2:'Stewart Martin'},
+  {day:'Tomorrow',time:'21:24',p1:'Scottt Weasley',s1:null,s2:null,p2:'Christopher Smith'},
+  {day:'Tomorrow',time:'21:36',p1:'Ben',s1:null,s2:null,p2:'Tim Miller'},
+  {day:'Tomorrow',time:'21:48',p1:'Scottt Weasley',s1:null,s2:null,p2:'Ben'},
+  {day:'Tomorrow',time:'22:00',p1:'Christopher Smith',s1:null,s2:null,p2:'Tim Miller'},
+  {day:'Tomorrow',time:'22:12',p1:'Scottt Weasley',s1:null,s2:null,p2:'Tim Miller'},
+  {day:'Tomorrow',time:'22:24',p1:'Christopher Smith',s1:null,s2:null,p2:'Ben'}
+];
+
+async function fetchSheetData(sheetName) {
+  if (!CONFIG.spreadsheetId) return null;
+  const url = `https://docs.google.com/spreadsheets/d/${CONFIG.spreadsheetId}/gviz/tq?tqx=out:json&sheet=${sheetName}`;
+  try {
+    const response = await fetch(url);
+    const text = await response.text();
+    const json = JSON.parse(text.substr(47).slice(0, -2));
+    const columns = json.table.cols.map(c => c.label);
+    return json.table.rows.map(row => {
+      const obj = {};
+      row.c.forEach((cell, i) => {
+        if (columns[i]) obj[columns[i]] = cell ? (cell.f || cell.v) : null;
+      });
+      return obj;
+    });
+  } catch (e) {
+    console.error(`Error fetching sheet ${sheetName}:`, e);
+    return null;
+  }
+}
+function processData() {
+  const { players, matches } = STATE;
+
+  if (players.length === 0) {
+    console.warn("processData: No players available to process.");
+    STATE.leaderboard = [];
+    STATE.goals = [];
+    return;
+  }
+  
+  // 1. Calculate Standings (Leaderboard)
+  const lb = players.map(p => ({
+    name: p.name,
+    group: p.group,
+    played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0
+  }));
+
+  console.log(`processData: Processing ${matches.length} matches for ${players.length} players.`);
+
+  matches.forEach(m => {
+    if (m.s1 === null || m.s2 === null) return;
+    const p1 = lb.find(p => p.name === m.p1);
+    const p2 = lb.find(p => p.name === m.p2);
+    if (!p1 || !p2) {
+       if (!p1 && m.p1) console.warn(`processData: Player not found in Players list: ${m.p1}`);
+       if (!p2 && m.p2) console.warn(`processData: Player not found in Players list: ${m.p2}`);
+       return;
+    }
+
+    const s1 = parseInt(m.s1);
+    const s2 = parseInt(m.s2);
+
+    p1.played++; p2.played++;
+    p1.gf += s1; p1.ga += s2;
+    p2.gf += s2; p2.ga += s1;
+
+    if (s1 > s2) { p1.w++; p2.l++; p1.pts += 3; }
+    else if (s1 < s2) { p2.w++; p1.l++; p2.pts += 3; }
+    else { p1.d++; p2.d++; p1.pts += 1; p2.pts += 1; }
+  });
+
+  lb.forEach(p => p.gd = p.gf - p.ga);
+  STATE.leaderboard = lb;
+
+  // 2. Determine Qualified (Top 2 per group)
+  const groups = ['A','B','C','D','E','F','G','H'];
+  const q16 = {};
+  groups.forEach(g => {
+    const sorted = lb.filter(p => p.group === g)
+      .sort((a,b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+    if (sorted[0]) q16[`${g}1`] = sorted[0].name;
+    if (sorted[1]) q16[`${g}2`] = sorted[1].name;
+  });
+  STATE.qualified16 = q16;
+
+  // 3. Calculate Top Scorers
+  const scorers = {};
+  matches.forEach(m => {
+    if (m.s1 !== null && m.p1) scorers[m.p1] = (scorers[m.p1] || 0) + parseInt(m.s1);
+    if (m.s2 !== null && m.p2) scorers[m.p2] = (scorers[m.p2] || 0) + parseInt(m.s2);
+  });
+  STATE.goals = Object.entries(scorers)
+    .map(([name, goals]) => ({
+      name, goals, 
+      group: players.find(p => p.name === name)?.group || '?'
+    }))
+    .sort((a,b) => b.goals - a.goals);
+  
+  console.log(`processData: Successfully calculated leaderboard (${lb.length} entries) and stats (${STATE.goals.length} scorers).`);
+}
+
+async function fetchRelayData() {
+  let scriptUrl = CONFIG.appsScriptUrl;
+  if (!scriptUrl || !CONFIG.spreadsheetId) return null;
+
+  if (!scriptUrl.startsWith('http')) {
+    if (scriptUrl.length > 30) {
+      scriptUrl = `https://script.google.com/macros/s/${scriptUrl}/exec`;
+    } else {
+      console.error("Invalid Apps Script URL or ID");
+      return null;
+    }
+  }
+
+  const url = `${scriptUrl}?id=${CONFIG.spreadsheetId}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Network error (${response.status})`);
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+
+    // Normalize keys (Map sheet headers to internal keys)
+    if (data.players) {
+      data.players = data.players.map(p => ({
+        name: p.name || p.Name || p.Player || p.PLAYER || '',
+        group: p.group || p.Group || p.GROUP || 'A'
+      })).filter(p => p.name);
+    }
+    if (data.matches) {
+      data.matches = data.matches.map(m => ({
+        day: m.day || m.Day || m.DAY || 'TBD',
+        time: m.time || m.Time || m.TIME || '00:00',
+        p1: m.p1 || m['Player 1'] || m['PLAYER 1'] || m.Player1 || '',
+        p2: m.p2 || m['Player 2'] || m['PLAYER 2'] || m.Player2 || '',
+        s1: m.s1 !== undefined ? m.s1 : m['Score 1'] !== undefined ? m['Score 1'] : m.Score1,
+        s2: m.s2 !== undefined ? m.s2 : m['Score 2'] !== undefined ? m['Score 2'] : m.Score2
+      })).map(m => {
+        const s1 = (m.s1 === '' || m.s1 === null || m.s1 === undefined) ? null : parseInt(m.s1);
+        const s2 = (m.s2 === '' || m.s2 === null || m.s2 === undefined) ? null : parseInt(m.s2);
+        return { ...m, s1, s2 };
+      });
+    }
+    // Corrected keys for tabs from bridge.js
+    const scheduleRaw = data.schedule || data.SCHEDULE || [];
+    if (scheduleRaw.length > 0) {
+      data.schedule = scheduleRaw.map(s => ({
+        day: s.day || s.Day || s.DAY || 'TBD',
+        time: s.time || s.Time || s.TIME || '00:00',
+        label: s.label || s.Match || s.MATCH || s.Label || ''
+      }));
+    }
+    if (data.qualified_16) {
+      const q = {};
+      data.qualified_16.forEach(row => {
+        const pos = row.position || row.Position || row.POS || '';
+        const name = row.name || row.Name || row.Player || '';
+        if (pos) q[pos] = name;
+      });
+      data.qualified16_data = q;
+    }
+
+    return data;
+  } catch (e) {
+    console.error(`Relay Fetch Error:`, e.message);
+    return { error: e.message };
+  }
+}
+
+async function requestSync() {
+  const btn = document.querySelector('.sync-btn');
+  const dot = document.querySelector('.status-dot');
+  const timeLabel = document.getElementById('last-sync-time');
+
+  btn.classList.add('loading');
+  dot.classList.remove('active');
+  dot.classList.add('loading');
+  timeLabel.textContent = 'Syncing...';
+
+  let data = null;
+  if (CONFIG.appsScriptUrl) {
+    data = await fetchRelayData();
+  } else if (CONFIG.spreadsheetId) {
+    const sheetPlayers = await fetchSheetData('Players');
+    const sheetMatches = await fetchSheetData('Matches');
+    if (sheetPlayers && sheetMatches) data = { players: sheetPlayers, matches: sheetMatches };
+  }
+
+  if (data && !data.error && (data.players || data.players_raw)) {
+    console.log("Sync Success. Data received:", Object.keys(data));
+    STATE.players = data.players || [];
+    STATE.matches = data.matches || [];
+    
+    // Explicitly check for schedule from the bridge (bridge.js uses underscores)
+    STATE.schedule = data.schedule || [];
+    
+    if (data.qualified16_data) STATE.qualified16 = data.qualified16_data;
+    
+    STATE.lastSync = new Date();
+    processData();
+    updateUI();
+    
+    dot.classList.remove('loading');
+    dot.classList.add('active');
+    timeLabel.textContent = `Live: ${STATE.lastSync.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+  } else {
+    timeLabel.textContent = 'Bridge Error';
+    dot.classList.remove('loading');
+    
+    const errorMsg = data && data.error ? data.error : "Check console for details";
+    console.error("Bridge Error:", errorMsg);
+    if (CONFIG.fallbackToStatic && STATE.players.length === 0) loadStatic();
+  }
+
+  btn.classList.remove('loading');
+}
+
+function loadStatic() {
+  STATE.players = JSON.parse(JSON.stringify(STATIC_PLAYERS));
+  STATE.matches = JSON.parse(JSON.stringify(STATIC_MATCHES));
+  processData();
+  updateUI();
+  document.getElementById('last-sync-time').textContent = 'Static Data';
+}
+
+function updateUI() {
+  renderStandings();
+  renderMatches();
+  renderKnockout();
+  renderStats();
+  renderSchedule();
+}
+
+// Initialize
+window.addEventListener('DOMContentLoaded', () => {
+  if (CONFIG.spreadsheetId) requestSync();
+  else loadStatic();
+  
+  // Auto-refresh every minute if spreadsheet ID is set
+  setInterval(() => {
+    if (CONFIG.spreadsheetId) requestSync();
+  }, CONFIG.refreshInterval);
+});
+
+// UI Settings Controls
+function toggleSettings(show) {
+  const modal = document.getElementById('settings-modal');
+  if (show) {
+    document.getElementById('setting-sheet-id').value = CONFIG.spreadsheetId;
+    document.getElementById('setting-script-url').value = CONFIG.appsScriptUrl;
+    modal.classList.add('active');
+  } else {
+    modal.classList.remove('active');
+  }
+}
+
+function saveSettings() {
+  const sheetId = document.getElementById('setting-sheet-id').value.trim();
+  const scriptUrl = document.getElementById('setting-script-url').value.trim();
+  
+  localStorage.setItem('ggo_sheet_id', sheetId);
+  localStorage.setItem('ggo_script_url', scriptUrl);
+  
+  CONFIG.spreadsheetId = sheetId;
+  CONFIG.appsScriptUrl = scriptUrl;
+  
+  toggleSettings(false);
+  requestSync();
+}
+
+// Helper functions for legacy renderers to use STATE
+const getPlayers = () => STATE.players;
+const getMatches = () => STATE.matches;
+const getLeaderboard = () => STATE.leaderboard;
+const getQualified16 = () => STATE.qualified16;
+const getGoals = () => STATE.goals;
+
+// ── COLOR PALETTE ────────────────────────────────────────────────────────
+const groupColors = {
+  A:'#00e676',B:'#69f0ae',C:'#40c4ff',D:'#ff6e40',
+  E:'#ea80fc',F:'#ffd740',G:'#ff80ab',H:'#80d8ff'
+};
+
+function initials(name) {
+  if (!name || typeof name !== 'string') return '?';
+  return name.split(' ').filter(w => w).map(w=>w[0].toUpperCase()).slice(0,2).join('');
+}
+function avatarStyle(group) {
+  const c = groupColors[group] || '#00e676';
+  return `background: linear-gradient(135deg, ${c}33, ${c}11); color: ${c}; border: 1px solid ${c}44;`;
+}
+
+// ── RENDER STANDINGS ─────────────────────────────────────────────────────
+function renderStandings() {
+  const groups = ['A','B','C','D','E','F','G','H'];
+  const container = document.getElementById('groups-grid');
+  container.innerHTML = '';
+
+  groups.forEach(g => {
+    const lb = getLeaderboard();
+    const gPlayers = lb
+      .filter(p => p.group === g)
+      .sort((a,b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+
+    if (lb.length === 0) {
+      container.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--muted);">No players found in sheet. Check your "Players" tab and headers (Name, Group).</div>`;
+      return;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    card.innerHTML = `
+      <div class="group-header">
+        <span class="group-label">Group ${g}</span>
+        <span class="group-badge">Top 2 Qualify</span>
+      </div>
+      <table class="group-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>P</th><th>W</th><th>D</th><th>L</th>
+            <th>GF</th><th>GA</th><th>GD</th><th>Pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${gPlayers.map((p,i) => `
+            <tr class="${i < 2 ? 'qualified' : ''}">
+              <td>
+                <span class="rank rank-${i+1}">${i+1}</span>
+                ${(p.name || 'Unknown').length > 14 ? (p.name || 'Unknown').split(' ')[0] : (p.name || 'Unknown')}
+              </td>
+              <td>${p.played}</td>
+              <td>${p.w}</td>
+              <td>${p.d}</td>
+              <td>${p.l}</td>
+              <td>${p.gf}</td>
+              <td>${p.ga}</td>
+              <td class="${p.gd > 0 ? 'gd-pos' : p.gd < 0 ? 'gd-neg' : ''}">${p.gd > 0 ? '+' : ''}${p.gd}</td>
+              <td class="pts-cell">${p.pts}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ── RENDER MATCHES ────────────────────────────────────────────────────────
+let currentFilter = 'all';
+function filterMatches(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMatches();
+}
+
+function renderMatches() {
+  const container = document.getElementById('matches-list');
+  const allMatches = getMatches();
+  let filtered = allMatches;
+  if (currentFilter === 'played') filtered = allMatches.filter(m => m.s1 !== null);
+  else if (currentFilter === 'pending') filtered = allMatches.filter(m => m.s1 === null);
+  else if (currentFilter === 'Today') filtered = allMatches.filter(m => m.day === 'Today');
+  else if (currentFilter === 'Tomorrow') filtered = allMatches.filter(m => m.day === 'Tomorrow');
+
+  // Group by day
+  const byDay = {};
+  filtered.forEach(m => {
+    if (!byDay[m.day]) byDay[m.day] = [];
+    byDay[m.day].push(m);
+  });
+
+  container.innerHTML = '';
+  if (allMatches.length === 0) {
+    container.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--muted);">No matches found. Check your "Matches" tab and headers (Day, Time, Player 1, Score 1...).</div>`;
+    return;
+  }
+
+  Object.entries(byDay).forEach(([day, matches]) => {
+    const dayHeader = document.createElement('div');
+    dayHeader.className = 'match-day-header';
+    dayHeader.textContent = `📅 ${day}`;
+    container.appendChild(dayHeader);
+
+    matches.forEach(m => {
+      const played = m.s1 !== null;
+      const winner = played ? (m.s1 > m.s2 ? m.p1 : m.s1 < m.s2 ? m.p2 : null) : null;
+      const p1g = getPlayers().find(p => p.name === m.p1)?.group || 'A';
+      const p2g = getPlayers().find(p => p.name === m.p2)?.group || 'A';
+
+      const card = document.createElement('div');
+      card.className = `match-card ${played ? 'played' : 'pending'}`;
+      card.innerHTML = `
+        <div class="player-side">
+          <div class="player-avatar" style="${avatarStyle(p1g)}">${initials(m.p1 || 'TBD')}</div>
+          <div>
+            <div class="player-name">${m.p1 || 'TBD'}</div>
+            ${winner === m.p1 && m.p1 ? '<div class="winner-badge">⭐ Winner</div>' : ''}
+          </div>
+        </div>
+        <div class="match-score">
+          ${played
+            ? `<div class="score-display">${m.s1} – ${m.s2}</div>`
+            : `<div class="score-pending">VS</div>`}
+          <div class="match-time">${m.time}</div>
+        </div>
+        <div class="player-side right">
+          <div>
+            <div class="player-name">${m.p2 || 'TBD'}</div>
+            ${winner === m.p2 && m.p2 ? '<div class="winner-badge">⭐ Winner</div>' : ''}
+          </div>
+          <div class="player-avatar" style="${avatarStyle(p2g)}">${initials(m.p2 || 'TBD')}</div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  });
+
+  if (container.children.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No matches found</div>';
+  }
+}
+
+// ── RENDER KNOCKOUT ───────────────────────────────────────────────────────
+function renderKnockout() {
+  const bracket = document.getElementById('bracket');
+  bracket.innerHTML = '';
+
+  // Round of 16 matches
+  const q16 = getQualified16();
+  const r16 = [
+    {label:'M1',p1:q16.A1 || 'TBD',p2:q16.B2 || 'TBD'},
+    {label:'M2',p1:q16.C1 || 'TBD',p2:q16.D2 || 'TBD'},
+    {label:'M3',p1:q16.E1 || 'TBD',p2:q16.F2 || 'TBD'},
+    {label:'M4',p1:q16.G1 || 'TBD',p2:q16.H2 || 'TBD'},
+    {label:'M5',p1:q16.B1 || 'TBD',p2:q16.A2 || 'TBD'},
+    {label:'M6',p1:q16.D1 || 'TBD',p2:q16.C2 || 'TBD'},
+    {label:'M7',p1:q16.F1 || 'TBD',p2:q16.E2 || 'TBD'},
+    {label:'M8',p1:q16.H1 || 'TBD',p2:q16.G2 || 'TBD'}
+  ];
+
+  const rounds = [
+    { title: 'Round of 16 — Monday', matches: r16 },
+    { title: 'Quarterfinals — Tuesday', matches: [{label:'QF1',p1:'TBD',p2:'TBD'},{label:'QF2',p1:'TBD',p2:'TBD'},{label:'QF3',p1:'TBD',p2:'TBD'},{label:'QF4',p1:'TBD',p2:'TBD'}] },
+    { title: 'Semifinals — Wednesday', matches: [{label:'SF1',p1:'TBD',p2:'TBD'},{label:'SF2',p1:'TBD',p2:'TBD'}] },
+    { title: 'Final — Thursday', matches: [{label:'FINAL',p1:'TBD',p2:'TBD'}] }
+  ];
+
+  rounds.forEach(round => {
+    const col = document.createElement('div');
+    col.className = 'bracket-round';
+    col.innerHTML = `<div class="round-title">${round.title}</div>`;
+    const slots = document.createElement('div');
+    slots.className = 'bracket-slots';
+    round.matches.forEach(m => {
+      const isTbd = m.p1 === 'TBD';
+      slots.innerHTML += `
+        <div class="bracket-match">
+          <div class="bracket-match-label">${m.label}</div>
+          <div class="bracket-player ${isTbd ? '' : ''}">
+            <span>${m.p1}</span>
+            ${!isTbd ? `<span class="bracket-player-score">–</span>` : ''}
+          </div>
+          <div class="bracket-player ${isTbd ? '' : ''}">
+            <span>${m.p2}</span>
+            ${!isTbd ? `<span class="bracket-player-score">–</span>` : ''}
+          </div>
+        </div>
+        <div class="bracket-spacer"></div>
+      `;
+    });
+    col.appendChild(slots);
+    bracket.appendChild(col);
+  });
+}
+
+// ── RENDER STATS ──────────────────────────────────────────────────────────
+function renderStats() {
+  const container = document.getElementById('stats-grid');
+  const allGoals = getGoals();
+  if (!allGoals || allGoals.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No stats available yet</div>';
+    return;
+  }
+  const maxGoals = allGoals[0].goals;
+  const currentLeaderboard = getLeaderboard();
+
+  // Top scorers
+  const scorersHTML = allGoals.slice(0, 12).map((p,i) => `
+    <div class="stat-row">
+      <div class="stat-rank">${i+1}</div>
+      <div class="player-avatar" style="${avatarStyle(p.group)};width:30px;height:30px;font-size:0.7rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;">${initials(p.name)}</div>
+      <div class="stat-name">${p.name}</div>
+      <span class="stat-group">${p.group}</span>
+      <div class="stat-bar-wrap">
+        <div class="stat-bar" style="width:${(p.goals/maxGoals)*100}%"></div>
+      </div>
+      <div class="stat-value">${p.goals}</div>
+    </div>
+  `).join('');
+
+  // Most wins (from leaderboard)
+  const byWins = [...currentLeaderboard].sort((a,b) => b.w - a.w || b.gf - a.gf).slice(0,12);
+  const maxWins = byWins.length > 0 ? byWins[0].w : 0;
+
+  const winsHTML = byWins.map((p,i) => `
+    <div class="stat-row">
+      <div class="stat-rank">${i+1}</div>
+      <div class="player-avatar" style="${avatarStyle(p.group)};width:30px;height:30px;font-size:0.7rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;">${initials(p.name)}</div>
+      <div class="stat-name">${p.name}</div>
+      <span class="stat-group">${p.group}</span>
+      <div class="stat-bar-wrap">
+        <div class="stat-bar" style="width:${maxWins > 0 ? (p.w/maxWins)*100 : 0}%"></div>
+      </div>
+      <div class="stat-value">${p.w}</div>
+    </div>
+  `).join('');
+
+  // Best goal difference
+  const byGD = [...currentLeaderboard].sort((a,b) => b.gd - a.gd).slice(0,12);
+  const maxGD = byGD.length > 0 ? byGD[0].gd : 0;
+
+  const gdHTML = byGD.map((p,i) => `
+    <div class="stat-row">
+      <div class="stat-rank">${i+1}</div>
+      <div class="player-avatar" style="${avatarStyle(p.group)};width:30px;height:30px;font-size:0.7rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;">${initials(p.name)}</div>
+      <div class="stat-name">${p.name}</div>
+      <span class="stat-group">${p.group}</span>
+      <div class="stat-bar-wrap">
+        <div class="stat-bar" style="width:${maxGD > 0 ? Math.max((p.gd/maxGD)*100,0) : 0}%;background:${p.gd >= 0 ? 'linear-gradient(90deg,var(--green),var(--green-dim))' : 'linear-gradient(90deg,var(--red),#aa0000)'}"></div>
+      </div>
+      <div class="stat-value" style="color:${p.gd >= 0 ? 'var(--green)' : 'var(--red)'}">${p.gd > 0 ? '+' : ''}${p.gd}</div>
+    </div>
+  `).join('');
+
+  // Points leaderboard
+  const byPts = [...currentLeaderboard].sort((a,b) => b.pts - a.pts || b.gd - a.gd).slice(0,12);
+  const maxPts = byPts.length > 0 ? byPts[0].pts : 0;
+
+  const ptsHTML = byPts.map((p,i) => `
+    <div class="stat-row">
+      <div class="stat-rank">${i+1}</div>
+      <div class="player-avatar" style="${avatarStyle(p.group)};width:30px;height:30px;font-size:0.7rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;">${initials(p.name)}</div>
+      <div class="stat-name">${p.name}</div>
+      <span class="stat-group">${p.group}</span>
+      <div class="stat-bar-wrap">
+        <div class="stat-bar" style="width:${maxPts > 0 ? (p.pts/maxPts)*100 : 0}%"></div>
+      </div>
+      <div class="stat-value">${p.pts}</div>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-card-header">⚽ Top Goal Scorers</div>
+      ${scorersHTML}
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-header">🏅 Points Leaderboard</div>
+      ${ptsHTML}
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-header">🏆 Most Wins</div>
+      ${winsHTML}
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-header">📈 Best Goal Difference</div>
+      ${gdHTML}
+    </div>
+  `;
+}
+
+// ── RENDER SCHEDULE ───────────────────────────────────────────────────────
+function renderSchedule() {
+  const container = document.getElementById('schedule-grid');
+  if (!container) return;
+  
+  let scheduleData = STATE.schedule;
+  
+  if (scheduleData.length === 0) {
+    scheduleData = [
+      { day: 'Monday — Round of 16', time:'16:00', label:'A1 vs B2' },
+      { day: 'Monday — Round of 16', time:'16:20', label:'C1 vs D2' },
+      { day: 'Monday — Round of 16', time:'16:40', label:'E1 vs F2' },
+      { day: 'Monday — Round of 16', time:'17:00', label:'G1 vs H2' },
+      { day: 'Monday — Round of 16', time:'17:20', label:'B1 vs A2' },
+      { day: 'Monday — Round of 16', time:'17:40', label:'D1 vs C2' },
+      { day: 'Monday — Round of 16', time:'18:00', label:'F1 vs E2' },
+      { day: 'Monday — Round of 16', time:'18:20', label:'H1 vs G2' },
+      { day: 'Tuesday — Quarterfinals', time:'16:00', label:'QF1' },
+      { day: 'Tuesday — Quarterfinals', time:'16:20', label:'QF2' },
+      { day: 'Tuesday — Quarterfinals', time:'16:40', label:'QF3' },
+      { day: 'Tuesday — Quarterfinals', time:'17:00', label:'QF4' },
+      { day: 'Wednesday — Semifinals', time:'16:00', label:'SF1' },
+      { day: 'Wednesday — Semifinals', time:'16:20', label:'SF2' },
+      { day: 'Thursday — Final', time:'18:00', label:'Grand Final' }
+    ];
+  }
+
+  // Group by day
+  const byDay = {};
+  scheduleData.forEach(s => {
+    if (!byDay[s.day]) byDay[s.day] = [];
+    byDay[s.day].push(s);
+  });
+
+  container.innerHTML = '';
+  Object.entries(byDay).forEach(([day, items]) => {
+    const card = document.createElement('div');
+    card.className = 'sched-card';
+    card.innerHTML = `
+      <div class="sched-day">${day}</div>
+      ${items.map(item => `
+        <div class="sched-match">
+          <span class="sched-time">${item.time}</span>
+          <span class="sched-label">${item.label}</span>
+        </div>
+      `).join('')}
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ── VIEW SWITCHER ─────────────────────────────────────────────────────────
+function showView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// Initial schedule render (can be static or fetched if added to sheet)
+renderSchedule();
+</script>
+</body>
+</html>
