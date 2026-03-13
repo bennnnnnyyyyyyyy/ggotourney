@@ -450,7 +450,7 @@
 
 <header>
   <div class="logo">
-    <img src="./GGO-White-Var3.png" alt="GGO Logo">
+    <img src="./images/GGO-White-Var3.png" alt="GGO Logo">
     <div class="logo-text">
       <h1>GGO FC 26</h1>
       <p>Tournament Dashboard</p>
@@ -550,8 +550,8 @@
 // ── DATA ────────────────────────────────────────────────────────────────
 // ── DYNAMIC CONFIG ──────────────────────────────────────────────────────
 const CONFIG = {
-  spreadsheetId: localStorage.getItem('ggo_sheet_id') || '1zcEKdIhD1MTq_-FsNTge8UwNTn5NsE2mnPFtw54bXc0',
-  appsScriptUrl: localStorage.getItem('ggo_script_url') || 'https://script.google.com/macros/s/AKfycbw2qfgs79eKIn46H6dHZkqkhQVJbZraEjuBJ5KO18tSQnFzctVMvd7A5b_00jz5KdZIgQ/exec',
+  spreadsheetId: '12QHfGvs-jf6lqTTkW9ZSDk2q4XRzFT_z8-7TpGpi55Q',
+  appsScriptUrl: 'https://script.google.com/macros/s/AKfycbw2qfgs79eKIn46H6dHZkqkhQVJbZraEjuBJ5KO18tSQnFzctVMvd7A5b_00jz5KdZIgQ/exec',
   refreshInterval: 300000, // 5 minutes
   fallbackToStatic: true
 };
@@ -694,8 +694,30 @@ function processData() {
     });
 
     lb.forEach(p => { p.gd = p.gf - p.ga; });
+
+    // Use Standings API data if available, mapping exact sheet columns to internal state
+    if (STATE.standings && STATE.standings.length > 0) {
+      STATE.standings.forEach(apiRow => {
+        const playerName = apiRow['Player'] || apiRow['name'] || '';
+        const target = lb.find(p => p.name === playerName);
+        if (target && playerName) {
+          const parseSafe = (val, fallback) => (val !== undefined && val !== null && val !== '') ? parseInt(val) : fallback;
+          target.played = parseSafe(apiRow['Played'], target.played);
+          target.w = parseSafe(apiRow['Wins'], target.w);
+          target.d = parseSafe(apiRow['Draw'], target.d);
+          target.l = parseSafe(apiRow['Loss'], target.l);
+          target.gf = parseSafe(apiRow['Goals For'], target.gf);
+          target.ga = parseSafe(apiRow['Goals Against'], target.ga);
+          target.gd = parseSafe(apiRow['Goal Diff'], target.gd);
+          target.pts = parseSafe(apiRow['Points'], target.pts);
+          target.group = apiRow['Group'] || apiRow['group'] || target.group;
+        }
+      });
+      console.log('processData: Overrode calculated leaderboard with API "Standings" data.');
+    }
+
     STATE.leaderboard = lb;
-    console.log('processData: Calculated leaderboard from "Matches" (' + lb.length + ' entries)');
+    console.log('processData: Generated leaderboard (' + lb.length + ' entries)');
   } else {
     STATE.leaderboard = [];
     STATE.goals = [];
@@ -742,6 +764,13 @@ async function fetchRelayData() {
     const response = await fetch(url);
     if (!response.ok) throw new Error('Network error (' + response.status + ')');
     const data = await response.json();
+
+    if (data.debug_logs && data.debug_logs.length > 0) {
+      console.log('--- BRIDGE APPS SCRIPT LOGS ---');
+      data.debug_logs.forEach(msg => console.log('  ' + msg));
+      console.log('-------------------------------');
+    }
+
     if (data.error) throw new Error(data.error);
 
     console.log('Bridge returned tabs:', data.tabs_found);
@@ -843,7 +872,8 @@ async function requestSync() {
   } else if (CONFIG.spreadsheetId) {
     const sheetPlayers = await fetchSheetData('Players');
     const sheetMatches = await fetchSheetData('Matches');
-    if (sheetPlayers && sheetMatches) data = { players: sheetPlayers, matches: sheetMatches };
+    const sheetStandings = await fetchSheetData('Standings');
+    if (sheetPlayers && sheetMatches) data = { players: sheetPlayers, matches: sheetMatches, standings: sheetStandings };
   }
 
   if (data && !data.error && (data.players || data.leaderboard_data)) {
@@ -857,6 +887,9 @@ async function requestSync() {
     STATE._bridgeQualified = data.qualified16_data || {};
     if (data.qualified16_data) STATE.qualified16 = data.qualified16_data;
 
+    // Use exact standings out of the bridge or fallback
+    STATE.standings = data.standings || [];
+
     // Use sheet's stats as top scorers if available
     if (data.stats_data && data.stats_data.length > 0) {
       // We'll enrich with group info after processData runs
@@ -866,12 +899,15 @@ async function requestSync() {
     STATE.lastSync = new Date();
     processData();
 
+    // Store standings straight from the bridge
+    STATE.standings = data.standings || [];
+
     // Enrich stats with group info from leaderboard
     if (STATE._bridgeStats && STATE._bridgeStats.length > 0) {
       STATE.goals = STATE._bridgeStats.map(s => ({
         name: s.name,
         goals: s.goals,
-        group: STATE.leaderboard.find(p => p.name === s.name)?.group || '?'
+        group: (STATE.players.find(p => p.name === s.name) || {}).group || '?'
       }));
     }
 
