@@ -652,12 +652,14 @@ async function fetchRelayData() {
     // Bug 1 fix: use leaderboard played count to detect unplayed 0-0
     if (data.matches) {
       // Build a lookup of how many games each player has actually played
+      // Sheet's "Played" is broken (counts unplayed 0-0 as played), so use W + L instead
       const lbData = data.group_ranking__leaderboard_ || [];
       const playedMap = {};
       lbData.forEach(row => {
         const name = row.Player || row.name || '';
-        const played = parseInt(row.Played || row.played || 0);
-        if (name) playedMap[name] = played;
+        const w = parseInt(row.W || row.Wins || 0);
+        const l = parseInt(row.L || row.Loss || 0);
+        if (name) playedMap[name] = w + l; // real played = W + L (draws are inflated)
       });
 
       // Build a counter of how many matches in the sheet each player appears in with scores
@@ -697,25 +699,33 @@ async function fetchRelayData() {
             counterMap[p2Name] = (counterMap[p2Name] || 1) - 1;
           }
         });
-        console.log('Applied played-count filter using leaderboard data');
+        console.log('Applied played-count filter using W+L from leaderboard');
       }
     }
 
-    // ── Normalize Leaderboard (Bug 2 fix) ──
+    // ── Normalize Leaderboard (Bug 2 fix + inflated draws fix) ──
     const lbRaw = data.group_ranking__leaderboard_ || [];
     if (lbRaw.length > 0) {
-      data.leaderboard_data = lbRaw.map(row => ({
-        name:   row.Player || row.name || '',
-        group:  row.Group || row.group || '?',
-        played: parseInt(row.Played || row.played || 0),
-        w:      parseInt(row.W || row.Wins || 0),
-        d:      parseInt(row.D || row.Draw || 0),
-        l:      parseInt(row.L || row.Loss || 0),
-        gf:     parseInt(row.GF || row['Goals For'] || 0),
-        ga:     parseInt(row.GA || row['Goals Against'] || 0),
-        gd:     parseInt(row.GD || row['Goal Diff'] || 0),
-        pts:    parseInt(row.Pts || row.Points || 0)
-      })).filter(p => p.name);
+      data.leaderboard_data = lbRaw.map(row => {
+        const w   = parseInt(row.W || row.Wins || 0);
+        const l   = parseInt(row.L || row.Loss || 0);
+        const gf  = parseInt(row.GF || row['Goals For'] || 0);
+        const ga  = parseInt(row.GA || row['Goals Against'] || 0);
+        // Sheet's Played and D are inflated by unplayed 0-0 matches
+        // Real played = W + L (draws are fake unless proven otherwise)
+        const realPlayed = w + l;
+        const realD = 0; // all "draws" are unplayed 0-0s
+        const realPts = w * 3; // no draw points
+        return {
+          name:   row.Player || row.name || '',
+          group:  row.Group || row.group || '?',
+          played: realPlayed,
+          w, d: realD, l,
+          gf, ga,
+          gd: gf - ga,
+          pts: realPts
+        };
+      }).filter(p => p.name);
     }
 
     // ── Normalize Qualified 16 ──
