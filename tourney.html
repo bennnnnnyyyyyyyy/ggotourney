@@ -1650,7 +1650,11 @@
             let s1 = (rawS1 === '' || rawS1 === null || rawS1 === undefined) ? null : parseInt(rawS1);
             let s2 = (rawS2 === '' || rawS2 === null || rawS2 === undefined) ? null : parseInt(rawS2);
 
-            const played = m.Played === true || m.Played === 'TRUE' || m.played === true || m.played === 'TRUE' || (s1 !== null && s2 !== null);
+            // Checkbox in G:G is the ONLY source of truth — never fall back to scores
+            const playedRaw = m['Played?'] ?? m['Played'] ?? m['played?'] ?? m['played'] ?? '';
+            const played = playedRaw === true || String(playedRaw).toUpperCase() === 'TRUE';
+            // If not played, null out scores so 0-0 doesn't render as a result
+            if (!played) { s1 = null; s2 = null; }
 
             return { day, time, p1, p2, s1, s2, played };
           }).filter(m => m.p1 && m.p2);
