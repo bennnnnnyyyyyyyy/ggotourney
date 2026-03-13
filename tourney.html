@@ -206,38 +206,81 @@
   .draw-badge { font-size: 0.65rem; color: #40c4ff; text-transform: uppercase; letter-spacing: 1px; }
   .match-card.draw { border-left: 3px solid #40c4ff; opacity: 1; }
 
-  /* ── KNOCKOUT BRACKET ── */
-  .bracket-container { overflow-x: auto; }
-  .bracket {
-    display: flex; gap: 40px; align-items: flex-start;
-    min-width: 900px; padding: 20px 0;
+  /* ── KNOCKOUT BRACKET (VERTICAL) ── */
+  .bracket-container { padding: 20px 0; max-width: 600px; margin: 0 auto; }
+  
+  .vertical-bracket {
+    display: flex; flex-direction: column; gap: 40px;
   }
-  .bracket-round { display: flex; flex-direction: column; gap: 0; min-width: 200px; }
-  .round-title {
-    font-family: 'TTFirsNeue', sans-serif; font-size: 0.9rem;
-    color: var(--muted); letter-spacing: 2px; text-transform: uppercase;
-    margin-bottom: 20px; text-align: center; padding: 8px;
-    border-bottom: 1px solid var(--border);
-    font-weight: 600;
+  
+  .vertical-round {
+    display: flex; flex-direction: column; gap: 16px;
   }
-  .bracket-slots { display: flex; flex-direction: column; }
+  
+  .vertical-round-title {
+    font-family: 'TTFirsNeue', sans-serif; font-size: 1.2rem; color: var(--green);
+    text-align: center; margin-bottom: 8px; letter-spacing: 2px;
+    text-transform: uppercase; border-bottom: 1px solid var(--border);
+    padding-bottom: 8px; position: relative; font-weight: 600;
+  }
+  
+  .vertical-matches {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  
+  /* Pairing up matches to show bracket relationship */
+  .match-pair {
+    display: flex; flex-direction: column; gap: 12px;
+    position: relative; padding: 12px;
+    background: rgba(0,209,94,0.02);
+    border: 1px solid rgba(0,209,94,0.1);
+    border-radius: 12px;
+  }
+  .match-pair-label {
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    background: var(--dark); padding: 0 10px; font-size: 0.7rem; color: var(--muted);
+    letter-spacing: 1px; text-transform: uppercase; font-weight: 600;
+    border: 1px solid rgba(0,209,94,0.1); border-radius: 20px;
+  }
+
+  /* Match Cards (Compact Style) */
   .bracket-match {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 8px; overflow: hidden; margin-bottom: 8px;
-    transition: all 0.2s;
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden; width: 100%;
+    transition: all 0.2s; display: flex; flex-direction: column;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
   }
-  .bracket-match:hover { border-color: var(--green-dim); }
+  .bracket-match:hover { border-color: var(--green-dim); transform: scale(1.02); }
+  
+  .bracket-match-label { 
+    font-size: 0.6rem; color: var(--muted); letter-spacing: 2px; 
+    text-align: center; padding: 4px; background: rgba(0,0,0,0.4); 
+    text-transform: uppercase; font-weight: 600;
+  }
+  
   .bracket-player {
-    padding: 10px 14px; display: flex; justify-content: space-between;
-    align-items: center; font-size: 0.82rem; font-weight: 500;
-    transition: background 0.15s;
+    padding: 8px 12px; display: grid; grid-template-columns: auto 1fr auto;
+    align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 500;
   }
-  .bracket-player:not(:last-child) { border-bottom: 1px solid var(--border); }
-  .bracket-player.winner { background: rgba(0,230,118,0.1); color: var(--green); }
-  .bracket-player.loser { opacity: 0.4; }
-  .bracket-player-score { font-family: 'TTFirsNeue', sans-serif; font-size: 1.1rem; color: var(--green); font-weight: 600; }
-  .bracket-match-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 2px; text-align: center; padding: 4px; background: rgba(0,0,0,0.2); text-transform: uppercase; }
-  .bracket-spacer { height: 16px; }
+  .bracket-player:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.05); }
+  
+  /* Placeholder crested badge */
+  .bracket-crest {
+    width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.55rem; font-weight: 700; color: #000; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.2);
+  }
+  
+  .bracket-player-name {
+    text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-family: 'DM Sans', sans-serif;
+  }
+  
+  .bracket-player-score { 
+    font-family: 'TTFirsNeue', sans-serif; font-size: 1rem; color: var(--text); font-weight: 600; text-align: right; width: 24px;
+  }
+  
+  .bracket-player.winner .bracket-player-score { color: var(--green); }
+  .bracket-player.loser { opacity: 0.5; }
+  .bracket-player.loser .bracket-player-score { color: var(--muted); }
 
   /* ── STATS ── */
   .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
@@ -389,8 +432,6 @@
     .sched-day { font-size: 0.85rem; padding: 8px 12px; }
     .sched-match { padding: 8px 12px; }
     .sched-label { font-size: 0.78rem; }
-    .bracket { min-width: 700px; gap: 20px; }
-    .bracket-round { min-width: 160px; }
     .champion-name { font-size: 2.2rem; }
     .champion-trophy { font-size: 3.5rem; }
     .champion-section { padding: 30px 12px; }
@@ -487,7 +528,7 @@
     <div class="champion-subtitle">FC 26 Tournament · 2026</div>
   </div>
   <div class="bracket-container">
-    <div class="bracket" id="bracket"></div>
+    <div class="vertical-bracket" id="bracket"></div>
   </div>
 </div>
 
@@ -1090,56 +1131,112 @@ function renderMatches() {
   }
 }
 
-// ── RENDER KNOCKOUT ───────────────────────────────────────────────────────
+// ── RENDER KNOCKOUT (VERTICAL) ───────────────────────────────────────
 function renderKnockout() {
   const bracket = document.getElementById('bracket');
   bracket.innerHTML = '';
 
-  // Round of 16 matches
   const q16 = getQualified16();
+  // Standard full knockout progression
   const r16 = [
-    {label:'M1',p1:q16.A1 || 'TBD',p2:q16.B2 || 'TBD'},
-    {label:'M2',p1:q16.C1 || 'TBD',p2:q16.D2 || 'TBD'},
-    {label:'M3',p1:q16.E1 || 'TBD',p2:q16.F2 || 'TBD'},
-    {label:'M4',p1:q16.G1 || 'TBD',p2:q16.H2 || 'TBD'},
-    {label:'M5',p1:q16.B1 || 'TBD',p2:q16.A2 || 'TBD'},
-    {label:'M6',p1:q16.D1 || 'TBD',p2:q16.C2 || 'TBD'},
-    {label:'M7',p1:q16.F1 || 'TBD',p2:q16.E2 || 'TBD'},
-    {label:'M8',p1:q16.H1 || 'TBD',p2:q16.G2 || 'TBD'}
+    {label:'M1', p1:q16.A1||'TBD', p2:q16.B2||'TBD'},
+    {label:'M2', p1:q16.C1||'TBD', p2:q16.D2||'TBD'},
+    {label:'M3', p1:q16.E1||'TBD', p2:q16.F2||'TBD'},
+    {label:'M4', p1:q16.G1||'TBD', p2:q16.H2||'TBD'},
+    {label:'M5', p1:q16.B1||'TBD', p2:q16.A2||'TBD'},
+    {label:'M6', p1:q16.D1||'TBD', p2:q16.C2||'TBD'},
+    {label:'M7', p1:q16.F1||'TBD', p2:q16.E2||'TBD'},
+    {label:'M8', p1:q16.H1||'TBD', p2:q16.G2||'TBD'}
+  ];
+
+  const qf = [
+    {label:'QF1', p1:'TBD', p2:'TBD'}, 
+    {label:'QF2', p1:'TBD', p2:'TBD'},
+    {label:'QF3', p1:'TBD', p2:'TBD'}, 
+    {label:'QF4', p1:'TBD', p2:'TBD'}
+  ];
+  
+  const sf = [
+    {label:'SF1', p1:'TBD', p2:'TBD'},
+    {label:'SF2', p1:'TBD', p2:'TBD'}
+  ];
+  
+  const final = [
+    {label:'FINAL', p1:'TBD', p2:'TBD'}
   ];
 
   const rounds = [
-    { title: 'Round of 16 — Monday', matches: r16 },
-    { title: 'Quarterfinals — Tuesday', matches: [{label:'QF1',p1:'TBD',p2:'TBD'},{label:'QF2',p1:'TBD',p2:'TBD'},{label:'QF3',p1:'TBD',p2:'TBD'},{label:'QF4',p1:'TBD',p2:'TBD'}] },
-    { title: 'Semifinals — Wednesday', matches: [{label:'SF1',p1:'TBD',p2:'TBD'},{label:'SF2',p1:'TBD',p2:'TBD'}] },
-    { title: 'Final — Thursday', matches: [{label:'FINAL',p1:'TBD',p2:'TBD'}] }
+    { title: 'Round of 16', matches: r16, pairs: true },
+    { title: 'Quarterfinals', matches: qf, pairs: true },
+    { title: 'Semifinals', matches: sf, pairs: true },
+    { title: 'Final', matches: final, pairs: false }
   ];
 
-  rounds.forEach(round => {
-    const col = document.createElement('div');
-    col.className = 'bracket-round';
-    col.innerHTML = `<div class="round-title">${round.title}</div>`;
-    const slots = document.createElement('div');
-    slots.className = 'bracket-slots';
-    round.matches.forEach(m => {
-      const isTbd = m.p1 === 'TBD';
-      slots.innerHTML += `
-        <div class="bracket-match">
-          <div class="bracket-match-label">${m.label}</div>
-          <div class="bracket-player ${isTbd ? '' : ''}">
-            <span>${m.p1}</span>
-            ${!isTbd ? `<span class="bracket-player-score">–</span>` : ''}
-          </div>
-          <div class="bracket-player ${isTbd ? '' : ''}">
-            <span>${m.p2}</span>
-            ${!isTbd ? `<span class="bracket-player-score">–</span>` : ''}
-          </div>
+  // Helper to render a match card
+  const createMatchCard = (m) => {
+    const isTbd = m.p1 === 'TBD';
+    const p1g = getPlayers().find(p => p.name === m.p1)?.group || 'A';
+    const p2g = getPlayers().find(p => p.name === m.p2)?.group || 'A';
+    
+    // Attempt to extract scores from played matches if available
+    const activeMatch = getMatches().find(mx => [mx.label, mx.label?.toUpperCase()].includes(m.label));
+    const s1 = (activeMatch && activeMatch.s1 !== null) ? activeMatch.s1 : '-';
+    const s2 = (activeMatch && activeMatch.s2 !== null) ? activeMatch.s2 : '-';
+    
+    return `
+      <div class="bracket-match">
+        <div class="bracket-match-label">${m.label}</div>
+        <div class="bracket-player ${isTbd ? '' : ''}">
+          <div class="bracket-crest" style="${avatarStyle(p1g)}">${initials(m.p1)}</div>
+          <span class="bracket-player-name">${m.p1}</span>
+          <span class="bracket-player-score">${isTbd ? '-' : s1}</span>
         </div>
-        <div class="bracket-spacer"></div>
-      `;
-    });
-    col.appendChild(slots);
-    bracket.appendChild(col);
+        <div class="bracket-player ${isTbd ? '' : ''}">
+          <div class="bracket-crest" style="${avatarStyle(p2g)}">${initials(m.p2)}</div>
+          <span class="bracket-player-name">${m.p2}</span>
+          <span class="bracket-player-score">${isTbd ? '-' : s2}</span>
+        </div>
+      </div>
+    `;
+  };
+
+  rounds.forEach(round => {
+    const roundDiv = document.createElement('div');
+    roundDiv.className = 'vertical-round';
+    
+    const title = document.createElement('h3');
+    title.className = 'vertical-round-title';
+    title.textContent = round.title;
+    roundDiv.appendChild(title);
+    
+    const matchesDiv = document.createElement('div');
+    matchesDiv.className = 'vertical-matches';
+    
+    if (round.pairs) {
+      // Group matches in pairs to visualize the bracket converging
+      for (let i = 0; i < round.matches.length; i += 2) {
+        if (i + 1 < round.matches.length) {
+          const m1 = round.matches[i];
+          const m2 = round.matches[i+1];
+          matchesDiv.innerHTML += `
+            <div class="match-pair">
+              <div class="match-pair-label">Winner to ${round.title === 'Round of 16' ? 'QF' + (i/2 + 1) : round.title === 'Quarterfinals' ? 'SF' + (i/2 + 1) : 'FINAL'}</div>
+              ${createMatchCard(m1)}
+              ${createMatchCard(m2)}
+            </div>
+          `;
+        } else {
+          matchesDiv.innerHTML += createMatchCard(round.matches[i]);
+        }
+      }
+    } else {
+      round.matches.forEach(m => {
+        matchesDiv.innerHTML += createMatchCard(m);
+      });
+    }
+    
+    roundDiv.appendChild(matchesDiv);
+    bracket.appendChild(roundDiv);
   });
 }
 
