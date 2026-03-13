@@ -421,7 +421,7 @@
     .player-name { font-size: 0.72rem; }
     .score-display { font-size: 1.3rem; }
     .score-pending { font-size: 1rem; }
-    .match-score { min-width: 50px; }
+        .match-score { min-width: 50px; }
     .match-time { font-size: 0.6rem; }
     .match-day-header { font-size: 0.9rem; }
     .stat-row { padding: 8px 12px; gap: 8px; }
@@ -658,6 +658,7 @@ async function fetchSheetData(sheetName) {
     return null;
   }
 }
+
 function processData() {
   let { players, matches } = STATE;
 
@@ -695,25 +696,62 @@ function processData() {
 
     lb.forEach(p => { p.gd = p.gf - p.ga; });
 
-    // Use Standings API data if available, mapping exact sheet columns to internal state
+    // ── FIX 1: Robust Standings override with case-insensitive matching ──────
+    // STATE.standings is now guaranteed to be set BEFORE processData() is called.
     if (STATE.standings && STATE.standings.length > 0) {
-      STATE.standings.forEach(apiRow => {
-        const playerName = apiRow['Player'] || apiRow['name'] || '';
-        const target = lb.find(p => p.name === playerName);
-        if (target && playerName) {
-          const parseSafe = (val, fallback) => (val !== undefined && val !== null && val !== '') ? parseInt(val) : fallback;
-          target.played = parseSafe(apiRow['Played'], target.played);
-          target.w = parseSafe(apiRow['Wins'], target.w);
-          target.d = parseSafe(apiRow['Draw'], target.d);
-          target.l = parseSafe(apiRow['Loss'], target.l);
-          target.gf = parseSafe(apiRow['Goals For'], target.gf);
-          target.ga = parseSafe(apiRow['Goals Against'], target.ga);
-          target.gd = parseSafe(apiRow['Goal Diff'], target.gd);
-          target.pts = parseSafe(apiRow['Points'], target.pts);
-          target.group = apiRow['Group'] || apiRow['group'] || target.group;
+      const parseSafe = (val, fallback) => {
+        if (val === undefined || val === null || val === '') return fallback;
+        const n = parseInt(val);
+        return isNaN(n) ? fallback : n;
+      };
+
+      // Case-insensitive, multi-alias field lookup helper
+      const getField = (row, ...keys) => {
+        for (const k of keys) {
+          // Exact match first
+          if (row[k] !== undefined && row[k] !== null && row[k] !== '') return row[k];
+          // Case-insensitive fallback
+          const lk = k.toLowerCase();
+          for (const rk of Object.keys(row)) {
+            if (rk.toLowerCase() === lk && row[rk] !== undefined && row[rk] !== null && row[rk] !== '') return row[rk];
+          }
         }
+        return undefined;
+      };
+
+      STATE.standings.forEach(apiRow => {
+        // FIX: trim + case-insensitive player name match
+        const playerName = (getField(apiRow, 'Player', 'name', 'Name', 'PLAYER') || '').toString().trim();
+        if (!playerName) return;
+
+        const target = lb.find(p => (p.name || '').trim().toLowerCase() === playerName.toLowerCase());
+        if (!target) {
+          console.warn('processData: No leaderboard match for standings row player "' + playerName + '"');
+          return;
+        }
+
+        const before = { played: target.played, w: target.w, d: target.d, l: target.l, pts: target.pts };
+
+        // FIX: handle "Draw" vs "Draws" and other header variations via getField aliases
+        target.played = parseSafe(getField(apiRow, 'Played', 'played', 'GP', 'P'),         target.played);
+        target.w      = parseSafe(getField(apiRow, 'Wins',   'W', 'wins', 'Won'),           target.w);
+        target.d      = parseSafe(getField(apiRow, 'Draw',   'Draws', 'D', 'draw', 'draws'),target.d);
+        target.l      = parseSafe(getField(apiRow, 'Loss',   'Losses', 'L', 'loss', 'Lost'),target.l);
+        target.gf     = parseSafe(getField(apiRow, 'Goals For',   'GF', 'gf', 'goals_for'), target.gf);
+        target.ga     = parseSafe(getField(apiRow, 'Goals Against','GA', 'ga', 'goals_against'), target.ga);
+        target.gd     = parseSafe(getField(apiRow, 'Goal Diff',   'GD', 'gd', 'goal_diff', 'GoalDiff'), target.gd);
+        target.pts    = parseSafe(getField(apiRow, 'Points', 'Pts', 'pts', 'PTS'),          target.pts);
+        target.group  = (getField(apiRow, 'Group', 'group') || target.group);
+
+        console.log(
+          'processData: Overrode "' + playerName + '" — ' +
+          'calculated: P' + before.played + ' W' + before.w + ' D' + before.d + ' Pts' + before.pts +
+          ' → sheet: P' + target.played + ' W' + target.w + ' D' + target.d + ' Pts' + target.pts
+        );
       });
-      console.log('processData: Overrode calculated leaderboard with API "Standings" data.');
+      console.log('processData: Standings override complete (' + STATE.standings.length + ' rows processed).');
+    } else {
+      console.log('processData: No standings data from bridge — using match-calculated values.');
     }
 
     STATE.leaderboard = lb;
@@ -784,21 +822,18 @@ async function fetchRelayData() {
     }
 
     // ── Normalize Matches ──
-    // Bug 1 fix: use leaderboard played count to detect unplayed 0-0
     if (data.matches) {
-      // Build a lookup of how many games each player has actually played
-      // Sheet's "Played" is broken (counts unplayed 0-0 as played), so use W + L instead
-      const lbData = data.group_ranking__leaderboard_ || [];
+      const lbData = data.group_ranking__leaderboard_
+        || data['group_ranking__leaderboard_']
+        || data.group_ranking_leaderboard_
+        || [];
       const playedMap = {};
       lbData.forEach(row => {
         const name = row.Player || row.name || '';
         const w = parseInt(row.W || row.Wins || 0);
         const l = parseInt(row.L || row.Loss || 0);
-        if (name) playedMap[name] = w + l; // real played = W + L (draws are inflated)
+        if (name) playedMap[name] = w + l;
       });
-
-      // Build a counter of how many matches in the sheet each player appears in with scores
-      const matchCountMap = {};
 
       data.matches = data.matches.map(m => {
         const day = m.Date || m.day || m.Day || 'TBD';
@@ -812,20 +847,17 @@ async function fetchRelayData() {
         let s1 = (rawS1 === '' || rawS1 === null || rawS1 === undefined) ? null : parseInt(rawS1);
         let s2 = (rawS2 === '' || rawS2 === null || rawS2 === undefined) ? null : parseInt(rawS2);
 
-        // Capture Played checkbox from Column G (mapped as "Played" by bridge), or fallback to scores
         const played = m.Played === true || m.Played === 'TRUE' || m.played === true || m.played === 'TRUE' || (s1 !== null && s2 !== null);
 
         return { day, time, p1, p2, s1, s2, played };
       }).filter(m => m.p1 && m.p2);
-
     }
-
 
     // ── Normalize Qualified 16 ──
     if (data.qualified_16) {
       const q = {};
       data.qualified_16.forEach(row => {
-        const pos = row.Group || ''; // e.g. 'A1', 'A2'
+        const pos = row.Group || '';
         const name = row.Player || '';
         if (pos && name) q[pos] = name;
       });
@@ -878,29 +910,36 @@ async function requestSync() {
 
   if (data && !data.error && (data.players || data.leaderboard_data)) {
     console.log('Sync OK. Keys:', Object.keys(data));
-    STATE.players = data.players || [];
-    STATE.matches = data.matches || [];
-    STATE.schedule = data.schedule || [];
 
-    // Bug 2 fix: store pre-calculated leaderboard for processData to use
-    STATE._bridgeLeaderboard = data.leaderboard_data || [];
+    // ── FIX 2: Assign ALL state BEFORE calling processData() ──────────────
+    // Previously STATE.standings was assigned after processData(), so the
+    // override logic inside processData() always saw an empty array.
+    STATE.players  = data.players || [];
+    STATE.matches  = data.matches || [];
+    STATE.schedule = data.schedule || [];
+    STATE.standings = data.standings || [];  // ← must be set BEFORE processData()
+
+    // ── FIX 3: Handle both key variants the bridge may return ─────────────
+    // The bridge sometimes returns the leaderboard as 'group_ranking__leaderboard_'
+    // (double underscore) and sometimes as 'leaderboard_data'. Handle both.
+    STATE._bridgeLeaderboard = data.leaderboard_data
+      || data['group_ranking__leaderboard_']
+      || data.group_ranking__leaderboard_
+      || data['group_ranking_leaderboard_']
+      || [];
+
     STATE._bridgeQualified = data.qualified16_data || {};
     if (data.qualified16_data) STATE.qualified16 = data.qualified16_data;
 
-    // Use exact standings out of the bridge or fallback
-    STATE.standings = data.standings || [];
-
     // Use sheet's stats as top scorers if available
     if (data.stats_data && data.stats_data.length > 0) {
-      // We'll enrich with group info after processData runs
       STATE._bridgeStats = data.stats_data;
     }
 
     STATE.lastSync = new Date();
-    processData();
 
-    // Store standings straight from the bridge
-    STATE.standings = data.standings || [];
+    // processData() now runs with standings already populated — override will fire correctly
+    processData();
 
     // Enrich stats with group info from leaderboard
     if (STATE._bridgeStats && STATE._bridgeStats.length > 0) {
@@ -949,7 +988,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (CONFIG.spreadsheetId) requestSync();
   else loadStatic();
   
-  // Auto-refresh every minute if spreadsheet ID is set
+  // Auto-refresh every 5 minutes if spreadsheet ID is set
   setInterval(() => {
     if (CONFIG.spreadsheetId) requestSync();
   }, CONFIG.refreshInterval);
@@ -989,14 +1028,10 @@ const getQualified16 = () => STATE.qualified16;
 const getGoals = () => STATE.goals;
 
 // ── TIME PARSER ──────────────────────────────────────────────────────────
-// Google Sheets returns time values as ISO strings like "1899-12-30T16:18:51.000Z"
-// This converts any such value to a clean "HH:MM" format
 function parseTime(val) {
   if (!val) return '00:00';
   const s = String(val).trim();
-  // Already HH:MM format
   if (/^\d{1,2}:\d{2}$/.test(s)) return s;
-  // ISO date string like "1899-12-30T16:18:51.000Z"
   if (s.includes('T') && (s.includes('-') || s.includes(':'))) {
     try {
       const d = new Date(s);
@@ -1007,7 +1042,6 @@ function parseTime(val) {
       }
     } catch (e) { /* fall through */ }
   }
-  // Date(value) for serial numbers
   if (!isNaN(s) && parseFloat(s) > 0 && parseFloat(s) < 1) {
     const totalMinutes = Math.round(parseFloat(s) * 24 * 60);
     const h = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
@@ -1173,7 +1207,6 @@ function renderKnockout() {
   bracket.innerHTML = '';
 
   const q16 = getQualified16();
-  // Standard full knockout progression
   const r16 = [
     {label:'M1', p1:q16.A1||'TBD', p2:q16.B2||'TBD'},
     {label:'M2', p1:q16.C1||'TBD', p2:q16.D2||'TBD'},
@@ -1208,13 +1241,11 @@ function renderKnockout() {
     { title: 'Final', matches: final, pairs: false }
   ];
 
-  // Helper to render a match card
   const createMatchCard = (m) => {
     const isTbd = m.p1 === 'TBD';
     const p1g = getPlayers().find(p => p.name === m.p1)?.group || 'A';
     const p2g = getPlayers().find(p => p.name === m.p2)?.group || 'A';
     
-    // Attempt to extract scores from played matches if available
     const activeMatch = getMatches().find(mx => [mx.label, mx.label?.toUpperCase()].includes(m.label));
     const s1 = (activeMatch && activeMatch.s1 !== null) ? activeMatch.s1 : '-';
     const s2 = (activeMatch && activeMatch.s2 !== null) ? activeMatch.s2 : '-';
@@ -1249,7 +1280,6 @@ function renderKnockout() {
     matchesDiv.className = 'vertical-matches';
     
     if (round.pairs) {
-      // Group matches in pairs to visualize the bracket converging
       for (let i = 0; i < round.matches.length; i += 2) {
         if (i + 1 < round.matches.length) {
           const m1 = round.matches[i];
@@ -1282,14 +1312,12 @@ function renderStats() {
   const allGoals = getGoals();
   const currentLeaderboard = getLeaderboard();
 
-  // Bug 5 fix: only bail if BOTH are empty
   if ((!allGoals || allGoals.length === 0) && (!currentLeaderboard || currentLeaderboard.length === 0)) {
     container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No stats available yet</div>';
     return;
   }
   const maxGoals = allGoals.length > 0 ? allGoals[0].goals : 1;
 
-  // Top scorers
   const scorersHTML = allGoals.slice(0, 12).map((p,i) => `
     <div class="stat-row">
       <div class="stat-rank">${i+1}</div>
@@ -1303,7 +1331,6 @@ function renderStats() {
     </div>
   `).join('');
 
-  // Most wins (from leaderboard)
   const byWins = [...currentLeaderboard].sort((a,b) => b.w - a.w || b.gf - a.gf).slice(0,12);
   const maxWins = byWins.length > 0 ? byWins[0].w : 0;
 
@@ -1320,7 +1347,6 @@ function renderStats() {
     </div>
   `).join('');
 
-  // Best goal difference
   const byGD = [...currentLeaderboard].sort((a,b) => b.gd - a.gd).slice(0,12);
   const maxGD = byGD.length > 0 ? byGD[0].gd : 0;
 
@@ -1337,7 +1363,6 @@ function renderStats() {
     </div>
   `).join('');
 
-  // Points leaderboard
   const byPts = [...currentLeaderboard].sort((a,b) => b.pts - a.pts || b.gd - a.gd).slice(0,12);
   const maxPts = byPts.length > 0 ? byPts[0].pts : 0;
 
@@ -1401,7 +1426,6 @@ function renderSchedule() {
     ];
   }
 
-  // Group by day
   const byDay = {};
   scheduleData.forEach(s => {
     if (!byDay[s.day]) byDay[s.day] = [];
@@ -1433,7 +1457,7 @@ function showView(id, btn) {
   if (btn) btn.classList.add('active');
 }
 
-// Initial schedule render (can be static or fetched if added to sheet)
+// Initial schedule render
 renderSchedule();
 </script>
 </body>
