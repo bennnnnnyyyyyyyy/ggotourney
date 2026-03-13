@@ -1,0 +1,80 @@
+/*
+Theme Name: Merito - GGO Child
+Theme URI: http://andmerito.com/
+Description: Child theme of Merito - GGO.
+Author: Merito
+Author URI: http://andmerito.com/
+Template: merito-ggo
+Version: 1.0.0
+License: GPL-2.0+
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: merito-ggo-child
+Tags: 
+Requires at least: 5.8 or Higher
+Requires PHP: 7.4 or Higher
+Tested up to: 6.4
+*/
+
+/* ==========================================================================
+   Child Theme Customizations
+   Add your custom CSS below this line
+   ========================================================================== */ 
+
+/* Section Slide Reveal Transitions */
+.pxl-slide-reveal {
+    overflow: hidden;
+    position: relative;
+}
+
+/* Slide Up - Section slides up from bottom */
+.pxl-slide-up {
+    transform: translateY(100px);
+    opacity: 0;
+}
+
+/* Slide Down - Section slides down from top */
+.pxl-slide-down {
+    transform: translateY(-100px);
+    opacity: 0;
+}
+
+/* Slide Left - Section slides left from right */
+.pxl-slide-left {
+    transform: translateX(100px);
+    opacity: 0;
+}
+
+/* Slide Right - Section slides right from left */
+.pxl-slide-right {
+    transform: translateX(-100px);
+    opacity: 0;
+}
+
+/* Slide Scale - Section scales up while sliding */
+.pxl-slide-scale {
+    transform: translateY(50px) scale(0.95);
+    opacity: 0;
+}
+
+/* Slide Fade - Simple fade with subtle movement */
+.pxl-slide-fade {
+    transform: translateY(30px);
+    opacity: 0;
+}
+
+/* Custom slide distances */
+.pxl-slide-reveal.large {
+    --slide-distance: 150px;
+}
+
+.pxl-slide-reveal.small {
+    --slide-distance: 50px;
+}
+
+/* Disable animations on mobile if needed */
+@media (max-width: 767px) {
+    .pxl-slide-reveal.disable-mobile {
+        transform: none !important;
+        opacity: 1 !important;
+    }
+} 
